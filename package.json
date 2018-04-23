@@ -1,0 +1,16 @@
+{
+  "name": "ecomplus-storage",
+  "version": "0.1.0",
+  "description": "E-Com Plus Storage API Node.js Express App",
+  "main": "main.js",
+  "scripts": {
+    "test": "node ./main.js"
+  },
+  "author": "E-Com Club",
+  "license": "GPL-3.0",
+  "private": true,
+  "dependencies": {
+    "ejs": "2.x",
+    "express": "4.x"
+  }
+}
