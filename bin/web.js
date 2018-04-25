@@ -51,11 +51,30 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
     let app = Express()
 
     app.post(baseUri + 'upload', function (req, res, next) {
-      upload(req, res, function (err) {
-        if (err) {
-          logger.error(err)
+      let storeId = parseInt(req.get('X-Store-ID'), 10)
+      if (storeId > 100) {
+        let authCallback = (err, authRes) => {
+          if (!err) {
+            if (authRes === true) {
+              // authenticated
+              upload(req, res, function (err) {
+                if (err) {
+                  logger.error(err)
+                }
+              })
+            } else {
+              // unauthorized
+            }
+          } else if (authRes) {
+            // error response from Store API
+          } else {
+            // unexpected error
+          }
         }
-      })
+
+        // check authentication first
+        auth(storeId, req.get('X-My-ID'), req.get('X-Access-Token'), authCallback)
+      }
     })
 
     app.listen(port, () => {
