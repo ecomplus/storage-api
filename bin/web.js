@@ -35,14 +35,19 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
     const s3 = new aws.S3({
       endpoint: spacesEndpoint
     })
+
     // setup multer for file uploads
     const upload = multer({
       storage: multerS3({
         s3: s3,
         bucket: doSpace.name,
         acl: 'public-read',
-        key: function (request, file, cb) {
-          cb(null, file.originalname)
+        key: (req, file, cb) => {
+          // original file extension
+          let ext = file.originalname.split('.').pop()
+          // unique key
+          let key = req.store + '-' + Date.now().toString()
+          cb(null, key + '.' + ext)
         }
       })
     }).array('upload', 1)
