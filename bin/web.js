@@ -21,7 +21,7 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
     // can't read config file
     throw err
   } else {
-    let { port, baseUri } = JSON.parse(data)
+    let { port, baseUri, awsAccess } = JSON.parse(data)
 
     // new Express application
     let app = Express()

@@ -1,5 +1,5 @@
 # storage-api
-E-Com Plus Storage API Node.js Express App
+E-Com Plus Storage API (DO Spaces) Node.js Express App 
 
 # Technology stack
 + [NodeJS](https://nodejs.org/en/) 8.9.x
