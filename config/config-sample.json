@@ -4,5 +4,9 @@
   "awsAccess": {
     "key": "",
     "secret": ""
+  },
+  "doSpace": {
+    "datacenter": "nyc3",
+    "name": "ecom"
   }
 }
