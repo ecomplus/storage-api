@@ -30,8 +30,33 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
   } else {
     let { port, baseUri, awsAccess, doSpace } = JSON.parse(data)
 
+    // set S3 endpoint to DigitalOcean Spaces
+    const spacesEndpoint = new aws.Endpoint(doSpace.datacenter + '.digitaloceanspaces.com')
+    const s3 = new aws.S3({
+      endpoint: spacesEndpoint
+    })
+    // setup multer for file uploads
+    const upload = multer({
+      storage: multerS3({
+        s3: s3,
+        bucket: doSpace.name,
+        acl: 'public-read',
+        key: function (request, file, cb) {
+          cb(null, file.originalname)
+        }
+      })
+    }).array('upload', 1)
+
     // new Express application
     let app = Express()
+
+    app.post(baseUri + 'upload', function (req, res, next) {
+      upload(req, res, function (err) {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    })
 
     app.listen(port, () => {
       logger.log('Storage API running with Express on port ' + port)
