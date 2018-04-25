@@ -35,7 +35,6 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
     const s3 = new aws.S3({
       endpoint: spacesEndpoint
     })
-
     // setup multer for file uploads
     const upload = multer({
       storage: multerS3({
@@ -55,10 +54,29 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
     // new Express application
     let app = Express()
 
+    let sendError = (res, status, code, devMsg, usrMsg) => {
+      if (!devMsg) {
+        devMsg = 'Unknow error'
+      }
+      if (!usrMsg) {
+        usrMsg = {
+          'en_us': 'Unexpected error, try again later',
+          'pt_br': 'Erro inesperado, tente novamente mais tarde'
+        }
+      }
+      // send error response
+      res.status(status).json({
+        'status': status,
+        'error_code': code,
+        'message': devMsg,
+        'user_message': usrMsg
+      })
+    }
+
     app.use((req, res, next) => {
       // check store ID
       let storeId = parseInt(req.get('X-Store-ID'), 10)
-      if (storeId > 100) {
+      if (storeId >= 100) {
         let authCallback = (err, authRes) => {
           if (!err) {
             if (authRes === true) {
@@ -68,20 +86,26 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
               next()
             } else {
               // unauthorized
-              res.status(401).end()
+              let devMsg = 'Unauthorized, invalid X-My-ID and X-Access-Token authentication headers'
+              let usrMsg = {
+                'en_us': 'No authorization for the requested resource',
+                'pt_br': 'Sem autorização para o recurso solicitado'
+              }
+              sendError(res, 401, 102, devMsg, usrMsg)
             }
           } else if (authRes) {
             // error response from Store API
-            res.status(authRes.statusCode).end()
+            sendError(res, authRes.statusCode, 103, err.message)
           } else {
             // unexpected error
-            res.status(500).end()
+            sendError(res, 500, 104)
           }
         }
         // check authentication
         auth(storeId, req.get('X-My-ID'), req.get('X-Access-Token'), authCallback)
       } else {
-        res.status(403).end()
+        let devMsg = 'Nonexistent or invalid X-Store-ID header'
+        sendError(res, 403, 101, devMsg)
       }
     })
 
