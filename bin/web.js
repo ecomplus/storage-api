@@ -28,7 +28,7 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
     // can't read config file
     throw err
   } else {
-    let { port, baseUri, awsAccess, doSpace } = JSON.parse(data)
+    let { port, baseUri, doSpace } = JSON.parse(data)
 
     // set S3 endpoint to DigitalOcean Spaces
     const spacesEndpoint = new aws.Endpoint(doSpace.datacenter + '.digitaloceanspaces.com')
