@@ -42,11 +42,8 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
         bucket: doSpace.name,
         acl: 'public-read',
         key: (req, file, cb) => {
-          // original file extension
-          let ext = file.originalname.split('.').pop()
-          // unique key
-          let key = req.store + '-' + Date.now().toString()
-          cb(null, key + '.' + ext)
+          // unique key based on Store ID
+          cb(null, req.store + '-' + Date.now().toString())
         }
       })
     }).array('upload', 1)
