@@ -95,7 +95,7 @@ fs.readFile(root + '/config/config.json', 'utf8', (err, data) => {
             }
           } else if (authRes) {
             // error response from Store API
-            sendError(res, authRes.statusCode, 103, err.message)
+            sendError(res, 400, 103, err.message)
           } else {
             // unexpected error
             sendError(res, 500, 104)
