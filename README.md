@@ -7,7 +7,9 @@ E-Com Plus Storage API (DO Spaces) Node.js Express App
 
 # Reference
 https://www.digitalocean.com/community/tutorials/how-to-upload-a-file-to-object-storage-with-node-js
+
 https://developers.digitalocean.com/documentation/spaces/
+
 https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
 
 # Setting up
