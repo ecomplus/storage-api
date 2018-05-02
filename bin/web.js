@@ -29,9 +29,9 @@ fs.readFile(path.join(__dirname, 'config/config.json'), 'utf8', (err, data) => {
     let { port, baseUri, doSpace } = JSON.parse(data)
 
     // S3 endpoint to DigitalOcean Spaces
-    const locationConstraint = doSpace.datacenter
-    const awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
-    const { s3 } = aws(awsEndpoint, locationConstraint)
+    let locationConstraint = doSpace.datacenter
+    let awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
+    let { s3 } = aws(awsEndpoint, locationConstraint)
 
     // setup multer for file uploads
     const upload = multer({
@@ -45,9 +45,6 @@ fs.readFile(path.join(__dirname, 'config/config.json'), 'utf8', (err, data) => {
         }
       })
     }).array('upload', 1)
-
-    // new Express application
-    let app = Express()
 
     let sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
@@ -68,7 +65,10 @@ fs.readFile(path.join(__dirname, 'config/config.json'), 'utf8', (err, data) => {
       })
     }
 
-    app.use((req, res, next) => {
+    // new Express application
+    const app = Express()
+
+    app.use(baseUri, (req, res, next) => {
       // check store ID
       let storeId = parseInt(req.get('X-Store-ID'), 10)
       if (storeId >= 100) {
