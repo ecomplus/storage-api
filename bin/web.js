@@ -1,11 +1,11 @@
 'use strict'
 
 // log on files
-const logger = require('./lib/Logger.js')
+const logger = require('./../lib/Logger.js')
 // authentication with Store API
-const auth = require('./lib/Auth.js')
+const auth = require('./../lib/Auth.js')
 // AWS SDK API abstraction
-const Aws = require('./lib/Aws.js')
+const Aws = require('./../lib/Aws.js')
 
 // NodeJS filesystem module
 const fs = require('fs')
