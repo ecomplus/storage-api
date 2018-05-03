@@ -3,6 +3,8 @@
   "baseUri": "/api/v1/",
   "adminBaseUri": "/_admin/",
   "doSpace": {
-    "datacenter": "nyc3"
+    "datacenter": "nyc3",
+    "accessKeyId": "abcdefgh",
+    "secretAccessKey": "1234567890"
   }
 }

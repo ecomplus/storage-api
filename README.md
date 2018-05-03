@@ -18,15 +18,8 @@ cp config/config-sample.json config/config.json
 nano config/config.json
 ```
 
-Edit `config.json` placing correct values for your environment.
-
-Setup AWS credentials with one of the following ways
-[described here](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html).
-In a CRON service, we recommend to set the
-[environment variables](https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-environment.html)
-on service file.
-
-After that, start app with node:
+Edit `config.json` placing correct values for your environment,
+after that, start app with node:
 
 ```bash
 node ./main.js
