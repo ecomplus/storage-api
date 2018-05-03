@@ -38,6 +38,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     // setup multer for file uploads
     const upload = multer({
+      /*
       storage: multerS3({
         s3: s3,
         bucket: doSpace.name,
@@ -47,6 +48,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           cb(null, req.store + '-' + Date.now().toString())
         }
       })
+      */
     }).array('upload', 1)
 
     let sendError = (res, status, code, devMsg, usrMsg) => {
