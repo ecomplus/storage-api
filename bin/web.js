@@ -146,27 +146,33 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     }
 
     app.get(adminBaseUri + 'setup/:store/', (req, res) => {
-      // check request origin IP
-      let ip = app.get('X-Real-IP')
-      switch (ip) {
-        case '127.0.0.1':
-        case '::1':
-          // localhost
-          // setup storage for specific store
-          createBucket(s3, locationConstraint)
-            .then(({ bucket }) => {
-              bucketCreated(req.params.store, bucket)
-              res.status(201).end()
-            })
-            .catch((err) => {
-              res.status(500).end(err.message)
-            })
-          break
+      // check store ID
+      let storeId = parseInt(req.params.store, 10)
+      if (storeId >= 100) {
+        // check request origin IP
+        let ip = app.get('X-Real-IP')
+        switch (ip) {
+          case '127.0.0.1':
+          case '::1':
+            // localhost
+            // setup storage for specific store
+            createBucket(s3, locationConstraint)
+              .then(({ bucket }) => {
+                bucketCreated(storeId, bucket)
+                res.status(201).end()
+              })
+              .catch((err) => {
+                res.status(500).end(err.message)
+              })
+            break
 
-        default:
-          // remote
-          // unauthorized
-          res.status(401).end()
+          default:
+            // remote
+            // unauthorized
+            res.status(401).end()
+        }
+      } else {
+        res.status(406).end()
       }
     })
 
