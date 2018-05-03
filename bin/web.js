@@ -128,6 +128,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       // API middlewares
       app.use(apiPath, ...middlewares)
 
+      app.get(apiPath, (req, res) => {
+        // GET bucket
+        res.json({
+          bucket,
+          host: bucket + '.' + awsEndpoint
+        })
+      })
+
       app.post(apiPath + 'upload', (req, res) => {
         upload(req, res, (err) => {
           if (err) {
