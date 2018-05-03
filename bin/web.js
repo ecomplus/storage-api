@@ -24,7 +24,7 @@ const multerS3 = require('multer-s3')
 const redis = require('redis')
 
 // read config file
-fs.readFile(path.join(__dirname, 'config/config.json'), 'utf8', (err, data) => {
+fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) => {
   if (err) {
     // can't read config file
     throw err
