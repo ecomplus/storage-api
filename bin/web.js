@@ -154,6 +154,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         switch (ip) {
           case '127.0.0.1':
           case '::1':
+          case '::ffff:127.0.0.1':
             // localhost
             // setup storage for specific store
             createBucket(s3, locationConstraint)
