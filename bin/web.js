@@ -29,27 +29,20 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // can't read config file
     throw err
   } else {
-    let { port, baseUri, doSpace } = JSON.parse(data)
+    let {
+      port,
+      baseUri,
+      adminBaseUri,
+      doSpace
+    } = JSON.parse(data)
 
     // S3 endpoint to DigitalOcean Spaces
     let locationConstraint = doSpace.datacenter
     let awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
-    let { s3 } = Aws(awsEndpoint, locationConstraint)
-
-    // setup multer for file uploads
-    const upload = multer({
-      /*
-      storage: multerS3({
-        s3: s3,
-        bucket: doSpace.name,
-        acl: 'public-read',
-        key: (req, file, cb) => {
-          // unique key based on Store ID
-          cb(null, req.store + '-' + Date.now().toString())
-        }
-      })
-      */
-    }).array('upload', 1)
+    let {
+      s3,
+      createBucket
+    } = Aws(awsEndpoint, locationConstraint)
 
     let sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
@@ -75,54 +68,94 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // new database client
     const client = redis.createClient()
 
-    app.use(baseUri, (req, res, next) => {
-      // check store ID
-      let storeId = parseInt(req.get('X-Store-ID'), 10)
-      if (storeId >= 100) {
-        let authCallback = (err, authRes) => {
-          if (!err) {
-            if (authRes === true) {
-              // authenticated
-              // continue
-              req.store = storeId
-              next()
-            } else {
-              // unauthorized
-              let devMsg = 'Unauthorized, invalid X-My-ID and X-Access-Token authentication headers'
-              let usrMsg = {
-                'en_us': 'No authorization for the requested resource',
-                'pt_br': 'Sem autorização para o recurso solicitado'
+    let middlewares = [
+      (req, res, next) => {
+        // check store ID
+        let storeId = parseInt(req.params.store, 10)
+        if (storeId >= 100) {
+          let authCallback = (err, authRes) => {
+            if (!err) {
+              if (authRes === true) {
+                // authenticated
+                // continue
+                req.store = storeId
+                next()
+              } else {
+                // unauthorized
+                let devMsg = 'Unauthorized, invalid X-My-ID and X-Access-Token authentication headers'
+                let usrMsg = {
+                  'en_us': 'No authorization for the requested resource',
+                  'pt_br': 'Sem autorização para o recurso solicitado'
+                }
+                sendError(res, 401, 102, devMsg, usrMsg)
               }
-              sendError(res, 401, 102, devMsg, usrMsg)
+            } else if (authRes) {
+              // error response from Store API
+              sendError(res, 400, 103, err.message)
+            } else {
+              // unexpected error
+              sendError(res, 500, 104)
             }
-          } else if (authRes) {
-            // error response from Store API
-            sendError(res, 400, 103, err.message)
-          } else {
-            // unexpected error
-            sendError(res, 500, 104)
           }
+          // check authentication
+          auth(storeId, req.get('X-My-ID'), req.get('X-Access-Token'), authCallback)
+        } else {
+          let devMsg = 'Nonexistent or invalid X-Store-ID header'
+          sendError(res, 403, 101, devMsg)
         }
-        // check authentication
-        auth(storeId, req.get('X-My-ID'), req.get('X-Access-Token'), authCallback)
-      } else {
-        let devMsg = 'Nonexistent or invalid X-Store-ID header'
-        sendError(res, 403, 101, devMsg)
       }
-    })
+    ]
 
-    app.get('/', (req, res) => {
-      res.json({
-        baseUri
-      })
-    })
+    let bucketCreated = (storeId) => {
+      return ({ bucket }) => {
+        // save bucket name on databse
+        client.set('storage:' + storeId, bucket)
 
-    app.post(baseUri + 'upload', (req, res) => {
-      upload(req, res, function (err) {
-        if (err) {
-          logger.error(err)
-        }
-      })
+        // setup multer for file uploads
+        let upload = multer({
+          storage: multerS3({
+            s3,
+            bucket,
+            acl: 'public-read',
+            key: (req, file, cb) => {
+              // unique key based on Store ID
+              cb(null, req.store + '-' + Date.now().toString())
+            }
+          })
+        }).array('upload', 1)
+
+        // API routes for specific store
+        let apiPath = '/:store' + baseUri
+        // API middlewares
+        app.use(apiPath, ...middlewares)
+
+        app.post(apiPath + 'upload', (req, res) => {
+          upload(req, res, (err) => {
+            if (err) {
+              logger.error(err)
+            }
+          })
+        })
+      }
+    }
+
+    app.get(adminBaseUri + 'setup/:store', (req, res, next) => {
+      // check request origin IP
+      let ip = app.get('X-Real-IP')
+      switch (ip) {
+        case '127.0.0.1':
+        case '::1':
+          // localhost
+          // setup storage for specific store
+          createBucket(s3, locationConstraint).then(bucketCreated(req.params.store))
+          res.status(201).end()
+          break
+
+        default:
+          // remote
+          // unauthorized
+          res.status(401).end()
+      }
     })
 
     app.listen(port, () => {
