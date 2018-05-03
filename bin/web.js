@@ -169,7 +169,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           default:
             // remote
             // unauthorized
-            res.status(401).end()
+            res.status(401).end('Unauthorized client IP: ' + ip)
         }
       } else {
         res.status(406).end()
