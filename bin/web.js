@@ -157,7 +157,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           case '::ffff:127.0.0.1':
             // localhost
             // setup storage for specific store
-            createBucket(s3, locationConstraint)
+            createBucket(locationConstraint)
               .then(({ bucket }) => {
                 bucketCreated(storeId, bucket)
                 res.status(201).end()
