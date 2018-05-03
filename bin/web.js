@@ -87,18 +87,26 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   'en_us': 'No authorization for the requested resource',
                   'pt_br': 'Sem autorização para o recurso solicitado'
                 }
-                sendError(res, 401, 102, devMsg, usrMsg)
+                sendError(res, 401, 103, devMsg, usrMsg)
               }
             } else if (authRes) {
               // error response from Store API
-              sendError(res, 400, 103, err.message)
+              sendError(res, 400, 104, err.message)
             } else {
               // unexpected error
-              sendError(res, 500, 104)
+              sendError(res, 500, 105)
             }
           }
+
           // check authentication
-          auth(storeId, req.get('X-My-ID'), req.get('X-Access-Token'), authCallback)
+          let myId = req.get('X-My-ID')
+          let accessToken = req.get('X-Access-Token')
+          if (myId && accessToken) {
+            auth(storeId, myId, accessToken, authCallback)
+          } else {
+            let devMsg = 'Undefined user ID (X-My-ID) or Access Token (X-Access-Token)'
+            sendError(res, 403, 102, devMsg)
+          }
         } else {
           let devMsg = 'Nonexistent or invalid X-Store-ID header'
           sendError(res, 403, 101, devMsg)
