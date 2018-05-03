@@ -113,7 +113,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     app.get('/', (req, res) => {
       res.json({
-        'baseUri': baseUri
+        baseUri
       })
     })
 
