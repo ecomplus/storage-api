@@ -150,7 +150,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let storeId = parseInt(req.params.store, 10)
       if (storeId >= 100) {
         // check request origin IP
-        let ip = app.get('X-Real-IP')
+        let ip = app.get('X-Real-IP') || req.connection.remoteAddress
         switch (ip) {
           case '127.0.0.1':
           case '::1':
