@@ -163,7 +163,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 res.status(201).end()
               })
               .catch((err) => {
-                logger.error(err)
+                logger.error(err.stack)
                 res.status(500).end(err.message)
               })
             break
