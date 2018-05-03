@@ -106,40 +106,38 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       }
     ]
 
-    let bucketCreated = (storeId) => {
-      return ({ bucket }) => {
-        // save bucket name on databse
-        client.set('storage:' + storeId, bucket)
+    let bucketCreated = (storeId, bucket) => {
+      // save bucket name on databse
+      client.set('storage:' + storeId, bucket)
 
-        // setup multer for file uploads
-        let upload = multer({
-          storage: multerS3({
-            s3,
-            bucket,
-            acl: 'public-read',
-            key: (req, file, cb) => {
-              // unique key based on Store ID
-              cb(null, req.store + '-' + Date.now().toString())
-            }
-          })
-        }).array('upload', 1)
-
-        // API routes for specific store
-        let apiPath = '/:store' + baseUri
-        // API middlewares
-        app.use(apiPath, ...middlewares)
-
-        app.post(apiPath + 'upload', (req, res) => {
-          upload(req, res, (err) => {
-            if (err) {
-              logger.error(err)
-            }
-          })
+      // setup multer for file uploads
+      let upload = multer({
+        storage: multerS3({
+          s3,
+          bucket,
+          acl: 'public-read',
+          key: (req, file, cb) => {
+            // unique key based on Store ID
+            cb(null, req.store + '-' + Date.now().toString())
+          }
         })
-      }
+      }).array('upload', 1)
+
+      // API routes for specific store
+      let apiPath = '/:store' + baseUri
+      // API middlewares
+      app.use(apiPath, ...middlewares)
+
+      app.post(apiPath + 'upload', (req, res) => {
+        upload(req, res, (err) => {
+          if (err) {
+            logger.error(err)
+          }
+        })
+      })
     }
 
-    app.get(adminBaseUri + 'setup/:store', (req, res, next) => {
+    app.get(adminBaseUri + 'setup/:store/', (req, res) => {
       // check request origin IP
       let ip = app.get('X-Real-IP')
       switch (ip) {
@@ -147,8 +145,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         case '::1':
           // localhost
           // setup storage for specific store
-          createBucket(s3, locationConstraint).then(bucketCreated(req.params.store))
-          res.status(201).end()
+          createBucket(s3, locationConstraint)
+            .then(({ bucket }) => {
+              bucketCreated(req.params.store, bucket)
+              res.status(201).end()
+            })
+            .catch((err) => {
+              res.status(500).end(err.message)
+            })
           break
 
         default:
