@@ -42,7 +42,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     let {
       s3,
       createBucket
-    } = Aws(awsEndpoint, locationConstraint, doSpace.accessKeyId, doSpace.secretAccessKey)
+    } = Aws(awsEndpoint, locationConstraint, doSpace)
 
     let sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
