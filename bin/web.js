@@ -1,11 +1,11 @@
 'use strict'
 
 // log on files
-const logger = require('./../lib/Logger.js')
+const logger = require('./lib/Logger.js')
 // authentication with Store API
-const auth = require('./../lib/Auth.js')
+const auth = require('./lib/Auth.js')
 // AWS SDK API abstraction
-const aws = require('./../lib/Aws.js')
+const Aws = require('./lib/Aws.js')
 
 // NodeJS filesystem module
 const fs = require('fs')
@@ -20,6 +20,9 @@ const multer = require('multer')
 // extends file uploads to S3 object storage
 const multerS3 = require('multer-s3')
 
+// Redis to store buckets
+const redis = require('redis')
+
 // read config file
 fs.readFile(path.join(__dirname, 'config/config.json'), 'utf8', (err, data) => {
   if (err) {
@@ -31,7 +34,7 @@ fs.readFile(path.join(__dirname, 'config/config.json'), 'utf8', (err, data) => {
     // S3 endpoint to DigitalOcean Spaces
     let locationConstraint = doSpace.datacenter
     let awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
-    let { s3 } = aws(awsEndpoint, locationConstraint)
+    let { s3 } = Aws(awsEndpoint, locationConstraint)
 
     // setup multer for file uploads
     const upload = multer({
@@ -67,6 +70,8 @@ fs.readFile(path.join(__dirname, 'config/config.json'), 'utf8', (err, data) => {
 
     // new Express application
     const app = Express()
+    // new database client
+    const client = redis.createClient()
 
     app.use(baseUri, (req, res, next) => {
       // check store ID

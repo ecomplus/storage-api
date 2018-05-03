@@ -13,6 +13,7 @@
     "express": "4.x",
     "aws-sdk": "2.x",
     "multer": "1.x",
-    "multer-s3": "2.x"
+    "multer-s3": "2.x",
+    "redis": "2.x"
   }
 }
