@@ -68,6 +68,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // new database client
     const client = redis.createClient()
 
+    // Redis key
+    let Key = (storeId) => 'storage:' + storeId
+
     let middlewares = [
       (req, res, next) => {
         // check store ID
@@ -108,16 +111,51 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             sendError(res, 403, 102, devMsg)
           }
         } else {
-          let devMsg = 'Nonexistent or invalid X-Store-ID header'
+          let devMsg = 'Nonexistent or invalid Store ID'
           sendError(res, 403, 101, devMsg)
         }
+      },
+
+      (req, res, next) => {
+        // get bucket name from database
+        client.getAsync(Key(req.store))
+          .then((val) => {
+            if (val) {
+              req.bucket = val
+              next()
+            } else {
+              // not found
+              let devMsg = 'No storage bucket found for this store ID'
+              let usrMsg = {
+                'en_us': 'There is no file database configured for this store',
+                'pt_br': 'Não há banco de arquivos configurado para esta loja'
+              }
+              sendError(res, 404, 122, devMsg, usrMsg)
+            }
+          })
+          .catch(() => {
+            // database error
+            sendError(res, 500, 121)
+          })
       }
     ]
 
-    let bucketCreated = (storeId, bucket) => {
-      // save bucket name on databse
-      client.set('storage:' + storeId, bucket)
+    // API routes for specific store
+    let apiPath = '/:store' + baseUri
+    // API middlewares
+    app.use(apiPath, ...middlewares)
 
+    app.get(apiPath, (req, res) => {
+      // GET bucket
+      let bucket = req.bucket
+      res.json({
+        bucket,
+        host: bucket + '.' + awsEndpoint
+      })
+    })
+
+    app.post(apiPath + 'upload', (req, res) => {
+      let bucket = req.bucket
       // setup multer for file uploads
       let upload = multer({
         storage: multerS3({
@@ -131,27 +169,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         })
       }).array('upload', 1)
 
-      // API routes for specific store
-      let apiPath = '/:store' + baseUri
-      // API middlewares
-      app.use(apiPath, ...middlewares)
-
-      app.get(apiPath, (req, res) => {
-        // GET bucket
-        res.json({
-          bucket,
-          host: bucket + '.' + awsEndpoint
-        })
+      upload(req, res, (err) => {
+        if (err) {
+          logger.error(err)
+        }
       })
-
-      app.post(apiPath + 'upload', (req, res) => {
-        upload(req, res, (err) => {
-          if (err) {
-            logger.error(err)
-          }
-        })
-      })
-    }
+    })
 
     app.get(adminBaseUri + 'setup/:store/', (req, res) => {
       // check store ID
@@ -167,7 +190,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             // setup storage for specific store
             createBucket(locationConstraint)
               .then(({ bucket }) => {
-                bucketCreated(storeId, bucket)
+                // save bucket name on databse
+                client.set(Key(storeId), bucket)
                 res.status(201).end()
               })
               .catch((err) => {
