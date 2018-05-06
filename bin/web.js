@@ -146,7 +146,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     app.use(apiPath, ...middlewares)
 
     app.get(apiPath, (req, res) => {
-      // GET bucket
+      // GET bucket name
       let bucket = req.bucket
       res.json({
         bucket,
