@@ -163,8 +163,15 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           bucket,
           acl: 'public-read',
           key: (req, file, cb) => {
-            // unique key based on Store ID
-            cb(null, req.store + '-' + Date.now().toString())
+            // unique key
+            let key = '/'
+            let dir = req.query.dir
+            if (dir) {
+              key += dir.replace(/[^\w-/]/g, '') + '/'
+            }
+            // keep filename
+            key += Date.now().toString() + '-' + file.originalname.replace(/[^\w-.]/g, '')
+            cb(null, key.toLowerCase())
           }
         })
       }).array('upload', 1)
