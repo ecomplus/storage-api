@@ -69,7 +69,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     const client = redis.createClient()
 
     // Redis key
-    let Key = (storeId) => 'storage:' + storeId
+    let Key = (storeId) => 'stg:' + storeId
 
     let middlewares = [
       (req, res, next) => {
