@@ -154,24 +154,29 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       })
     })
 
-    app.post(apiPath + 'upload', (req, res) => {
+    app.post(apiPath + 'upload.json', (req, res) => {
       let bucket = req.bucket
-      // setup multer for file uploads
+      // unique object key
+      let key = '/'
+
+      // setup multer for file upload
       let upload = multer({
         storage: multerS3({
           s3,
           bucket,
           acl: 'public-read',
           key: (req, file, cb) => {
-            // unique key
-            let key = '/'
             let dir = req.query.dir
             if (dir) {
-              key += dir.replace(/[^\w-/]/g, '') + '/'
+              // normalize, then remove empty dirs
+              dir = dir.replace(/[^\w-/]/g, '').replace('//', '')
+              if (dir.length) {
+                key += dir.toLowerCase() + '/'
+              }
             }
             // keep filename
-            key += Date.now().toString() + '-' + file.originalname.replace(/[^\w-.]/g, '')
-            cb(null, key.toLowerCase())
+            key += Date.now().toString() + '-' + file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
+            cb(null, key)
           }
         })
       }).array('upload', 1)
@@ -179,6 +184,15 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       upload(req, res, (err) => {
         if (err) {
           logger.error(err)
+          // respond with error
+        } else {
+          // uploaded
+          res.json({
+            bucket,
+            key,
+            // return complete object URL
+            uri: 'https://' + bucket + '.' + awsEndpoint + key
+          })
         }
       })
     })
