@@ -160,7 +160,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       // expose API endpoints
       res.json({
         endpoints: urls,
-        verbs: 'POST',
+        verbs: [ 'POST' ],
         reference: [
           'https://github.com/ecomclub/storage-api/wiki',
           'https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html'
