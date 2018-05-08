@@ -213,35 +213,47 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     })
 
     app.post(apiPath + 's3/:method.json', (req, res) => {
+      // setup method params
+      let params = req.body
+      if (params) {
+        if (typeof params !== 'object' || Array.isArray(params)) {
+          // invalid body
+          let devMsg = 'Request body (method params) must be empty or a valid JSON object'
+          sendError(res, 400, 3013, devMsg)
+          return
+        }
+      } else {
+        // empty
+        params = {}
+      }
+
       // run an AWS S3 method
       let method = req.params.method
       if (!/Object/.test(method)) {
         // forbidden
-        let devMsg = 'You are able to call only object methods:' +
+        let devMsg = 'You are able to call only object methods'
+        sendError(res, 403, 3011, devMsg)
+      } else if (typeof s3[method] !== 'function') {
+        // not found
+        let devMsg = 'Invalid method name, not found' +
+          '\nAvailable AWS S3 methods:' +
           '\nhttps://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html'
-        sendError(res, 403, 3010, devMsg)
-      }
-
-      // method params
-      let params
-      if (req.body) {
-        // params from request body
-        params = req.body
+        sendError(res, 404, 3012, devMsg)
       } else {
-        params = {}
-      }
-      // force store bucket
-      params.Bucket = req.bucket
+        // valid method
+        // force store bucket
+        params.Bucket = req.bucket
 
-      runMethod(method, params)
-        .then((data) => {
-          // pass same data returned by AWS API
-          res.json(data)
-        })
-        .catch((err) => {
-          // pass AWS SDK error message
-          sendError(res, 400, 3011, err.message)
-        })
+        runMethod(method, params)
+          .then((data) => {
+            // pass same data returned by AWS API
+            res.json(data)
+          })
+          .catch((err) => {
+            // pass AWS SDK error message
+            sendError(res, 400, 3019, err.message)
+          })
+      }
     })
 
     app.get(adminBaseUri + 'setup/:store/', (req, res) => {
