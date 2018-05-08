@@ -148,8 +148,25 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     // API routes for specific store
     let apiPath = '/:store' + baseUri
+    let urls = {
+      upload: apiPath + 'upload.json',
+      s3: apiPath + 's3/:method.json'
+    }
     // API middlewares
     app.use(apiPath, ...middlewares)
+
+    app.get('/', (req, res) => {
+      // public
+      // expose API endpoints
+      res.json({
+        endpoints: urls,
+        verbs: 'POST',
+        reference: [
+          'https://github.com/ecomclub/storage-api/wiki',
+          'https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html'
+        ]
+      })
+    })
 
     app.get(apiPath, (req, res) => {
       // GET bucket name
@@ -160,7 +177,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       })
     })
 
-    app.post(apiPath + 'upload.json', (req, res) => {
+    app.post(urls.upload, (req, res) => {
       let bucket = req.bucket
       // unique object key
       let key = '/'
@@ -212,7 +229,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       })
     })
 
-    app.post(apiPath + 's3/:method.json', (req, res) => {
+    app.post(urls.s3, (req, res) => {
       // setup method params
       let params = req.body
       if (params) {
