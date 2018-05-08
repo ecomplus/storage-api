@@ -41,7 +41,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     let awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
     let {
       s3,
-      createBucket
+      createBucket,
+      listObjects
     } = Aws(awsEndpoint, locationConstraint, doSpace)
 
     let sendError = (res, status, code, devMsg, usrMsg) => {
@@ -167,10 +168,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           bucket,
           acl: 'public-read',
           key: (req, file, cb) => {
-            let dir = req.query.dir
-            if (dir) {
-              // normalize, then remove empty dirs
-              dir = dir.replace(/[^\w-/]/g, '').replace('//', '')
+            let dir = req.query.directory
+            if (typeof dir === 'string' && dir.charAt(0) === '/') {
+              // remove first char to not duplicate first bar
+              // normalize, then remove empty paths
+              dir = dir.substr(1).replace(/[^\w-/]/g, '').replace('//', '')
               if (dir.length) {
                 key += dir.toLowerCase() + '/'
               }
@@ -204,6 +206,18 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           })
         }
       })
+    })
+
+    app.get(apiPath + 'list.json', (req, res) => {
+      listObjects(req.bucket, req.query.directory, req.query.continuation_token)
+        .then((data) => {
+          // pass same data returned by AWS API
+          res.json(data)
+        })
+        .catch((err) => {
+          // pass AWS SDK error message
+          sendError(res, 400, 3011, err.message)
+        })
     })
 
     app.get(adminBaseUri + 'setup/:store/', (req, res) => {
