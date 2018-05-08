@@ -179,13 +179,21 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             key += Date.now().toString() + '-' + file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
             cb(null, key)
           }
-        })
+        }),
+        limits: {
+          // maximum 5mb
+          fileSize: 5000000
+        }
       }).array('upload', 1)
 
       upload(req, res, (err) => {
         if (err) {
-          logger.error(err)
           // respond with error
+          let usrMsg = {
+            'en_us': 'This file can not be uploaded',
+            'pt_br': 'Este arquivo não pode ser carregado'
+          }
+          sendError(res, 400, 3001, err.message, usrMsg)
         } else {
           // uploaded
           res.json({
