@@ -133,8 +133,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               sendError(res, 404, 122, devMsg, usrMsg)
             }
           })
-          .catch(() => {
+          .catch((err) => {
             // database error
+            logger.error(err)
             sendError(res, 500, 121)
           })
       }
