@@ -19,6 +19,8 @@ const Express = require('express')
 const multer = require('multer')
 // extends file uploads to S3 object storage
 const multerS3 = require('multer-s3')
+// body parsing middleware
+const bodyParser = require('body-parser')
 
 // Redis to store buckets
 const redis = require('redis')
@@ -42,7 +44,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     let {
       s3,
       createBucket,
-      listObjects
+      runMethod
     } = Aws(awsEndpoint, locationConstraint, doSpace)
 
     let sendError = (res, status, code, devMsg, usrMsg) => {
@@ -66,10 +68,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     // new Express application
     const app = Express()
+    // parse JSON request body
+    app.use(bodyParser.json())
+
     // new database client
     const client = redis.createClient()
-
-    // Redis key
+    // Redis key pattern
     let Key = (storeId) => 'stg:' + storeId
 
     let middlewares = [
@@ -208,8 +212,28 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       })
     })
 
-    app.get(apiPath + 'list.json', (req, res) => {
-      listObjects(req.bucket, req.query.directory, req.query.continuation_token)
+    app.post(apiPath + 's3/:method.json', (req, res) => {
+      // run an AWS S3 method
+      let method = req.params.method
+      if (!/Object/.test(method)) {
+        // forbidden
+        let devMsg = 'You are able to call only object methods:' +
+          '\nhttps://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html'
+        sendError(res, 403, 3010, devMsg)
+      }
+
+      // method params
+      let params
+      if (req.body) {
+        // params from request body
+        params = req.body
+      } else {
+        params = {}
+      }
+      // force store bucket
+      params.Bucket = req.bucket
+
+      runMethod(method, params)
         .then((data) => {
           // pass same data returned by AWS API
           res.json(data)
