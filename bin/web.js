@@ -278,29 +278,34 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let storeId = parseInt(req.params.store, 10)
       if (storeId >= 100) {
         // check request origin IP
-        let ip = app.get('X-Real-IP') || req.connection.remoteAddress
-        switch (ip) {
-          case '127.0.0.1':
-          case '::1':
-          case '::ffff:127.0.0.1':
-            // localhost
-            // setup storage for specific store
-            createBucket(locationConstraint)
-              .then(({ bucket }) => {
-                // save bucket name on databse
-                client.set(Key(storeId), bucket)
-                res.status(201).end()
-              })
-              .catch((err) => {
-                logger.error(err)
-                res.status(500).end(err.message)
-              })
-            break
+        let ip = app.get('X-Real-IP')
+        if (ip) {
+          switch (ip) {
+            case '127.0.0.1':
+            case '::1':
+            case '::ffff:127.0.0.1':
+              // localhost
+              // setup storage for specific store
+              createBucket(locationConstraint)
+                .then(({ bucket }) => {
+                  // save bucket name on databse
+                  client.set(Key(storeId), bucket)
+                  res.status(201).end()
+                })
+                .catch((err) => {
+                  logger.error(err)
+                  res.status(500).end(err.message)
+                })
+              break
 
-          default:
-            // remote
-            // unauthorized
-            res.status(401).end('Unauthorized client IP: ' + ip)
+            default:
+              // remote
+              // unauthorized
+              res.status(401).end('Unauthorized client IP: ' + ip)
+          }
+        } else {
+          // no reverse proxy ?
+          res.status(407).end()
         }
       } else {
         res.status(406).end()
