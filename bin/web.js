@@ -131,6 +131,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       },
 
       (req, res, next) => {
+        // debug
+        logger.log('Redis GET')
         // get bucket name from database
         client.getAsync(Key(req.store))
           .then((val) => {
