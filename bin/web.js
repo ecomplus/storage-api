@@ -136,6 +136,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           .then((val) => {
             if (val) {
               req.bucket = val
+              // debug
+              logger.log(req.store + ' -> ' + val)
               next()
             } else {
               // not found
@@ -190,6 +192,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let bucket = req.bucket
       // unique object key
       let key = '/'
+      // debug
+      logger.log('Upload to bucket ' + bucket)
 
       // setup multer for file upload
       let upload = multer({
