@@ -220,6 +220,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
       upload(req, res, (err) => {
         if (err) {
+          // debug
+          logger.error(err)
           // respond with error
           let usrMsg = {
             'en_us': 'This file can not be uploaded',
