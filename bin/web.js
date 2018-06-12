@@ -96,8 +96,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 // authenticated
                 // continue
                 req.store = storeId
-                // debug
-                logger.log('Authenticated ' + storeId)
                 next()
               } else {
                 // unauthorized
