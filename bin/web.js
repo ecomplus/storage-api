@@ -131,15 +131,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       },
 
       (req, res, next) => {
-        // debug
-        logger.log('Redis GET')
         // get bucket name from database
-        client.getAsync(Key(req.store))
-          .then((val) => {
+        client.get(Key(req.store), (err, val) => {
+          if (!err) {
             if (val) {
               req.bucket = val
-              // debug
-              logger.log(req.store + ' -> ' + val)
               next()
             } else {
               // not found
@@ -150,12 +146,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               }
               sendError(res, 404, 122, devMsg, usrMsg)
             }
-          })
-          .catch((err) => {
+          } else {
             // database error
             logger.error(err)
             sendError(res, 500, 121)
-          })
+          }
+        })
       }
     ]
 
@@ -194,8 +190,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let bucket = req.bucket
       // unique object key
       let key = '/'
-      // debug
-      logger.log('Upload to bucket ' + bucket)
 
       // setup multer for file upload
       let upload = multer({
