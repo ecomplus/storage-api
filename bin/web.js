@@ -68,6 +68,15 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     // new Express application
     const app = Express()
+    app.use((req, res, next) => {
+      // fix for CORS support
+      if (req.method === 'OPTION') {
+        res.status(204).end()
+      } else {
+        // process request
+        next()
+      }
+    })
     // parse JSON request body
     app.use(bodyParser.json())
 
