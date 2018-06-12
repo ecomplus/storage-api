@@ -197,6 +197,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           s3,
           bucket,
           acl: 'public-read',
+          contentType: multerS3.AUTO_CONTENT_TYPE,
           key: (req, file, cb) => {
             let dir = req.query.directory
             if (typeof dir === 'string' && dir.charAt(0) === '/') {
@@ -232,7 +233,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             bucket,
             key,
             // return complete object URL
-            uri: 'https://' + bucket + '.' + awsEndpoint + key
+            uri: 'https://' + bucket + '.' + awsEndpoint + '/' + key
           })
         }
       })
