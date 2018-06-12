@@ -189,7 +189,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     app.post(urls.upload, (req, res) => {
       let bucket = req.bucket
       // unique object key
-      let key = '/'
+      let key = ''
 
       // setup multer for file upload
       let upload = multer({
@@ -213,8 +213,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           }
         }),
         limits: {
-          // maximum 5mb
-          fileSize: 5000000
+          // maximum 3mb
+          fileSize: 3000000
         }
       }).array('file', 1)
 
