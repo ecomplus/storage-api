@@ -216,12 +216,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           // maximum 5mb
           fileSize: 5000000
         }
-      }).array('upload', 1)
+      }).array('file', 1)
 
       upload(req, res, (err) => {
         if (err) {
-          // debug
-          logger.error(err)
           // respond with error
           let usrMsg = {
             'en_us': 'This file can not be uploaded',
