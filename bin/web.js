@@ -70,7 +70,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     const app = Express()
     app.use((req, res, next) => {
       // fix for CORS support
-      if (req.method === 'OPTION') {
+      if (req.method === 'OPTIONS') {
         res.status(204).end()
       } else {
         // process request
