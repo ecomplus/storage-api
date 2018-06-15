@@ -190,6 +190,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let bucket = req.bucket
       // unique object key
       let key = ''
+      let filename
 
       // setup multer for file upload
       let upload = multer({
@@ -209,7 +210,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               }
             }
             // keep filename
-            key += Date.now().toString() + '-' + file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
+            filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
+            key += Date.now().toString() + '-' + filename
             cb(null, key)
           }
         }),
@@ -235,6 +237,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             // return complete object URL
             uri: 'https://' + bucket + '.' + awsEndpoint + '/' + key
           })
+
+          if (/.*\.(jpg|png|jpeg)/i.test(filename)) {
+            // optimize image
+          }
         }
       })
     })
