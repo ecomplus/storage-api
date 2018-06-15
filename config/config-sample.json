@@ -8,7 +8,7 @@
     "secretAccessKey": "1234567890"
   },
   "kraken": {
-    "api_key": "abcdefgh",
-    "api_secret": "1234567890"
+    "apiKey": "abcdefgh",
+    "apiSecret": "1234567890"
   }
 }
