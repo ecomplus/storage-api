@@ -52,7 +52,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     // setup Kraken client
     let kraken = Kraken(krakenAuth)
-    logger.log(kraken)
 
     let sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
@@ -238,15 +237,17 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           sendError(res, 400, 3001, err.message, usrMsg)
         } else {
           // uploaded
+          let uri = 'https://' + bucket + '.' + awsEndpoint + '/' + key
           res.json({
             bucket,
             key,
             // return complete object URL
-            uri: 'https://' + bucket + '.' + awsEndpoint + '/' + key
+            uri
           })
 
           if (/.*\.(jpg|png|jpeg)/i.test(filename)) {
             // optimize image
+            kraken(uri)
           }
         }
       })
