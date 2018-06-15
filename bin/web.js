@@ -247,7 +247,15 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
           if (/.*\.(jpg|png|jpeg|webp)/i.test(filename)) {
             // optimize image
-            kraken(uri)
+            var callback = function (err, { imageBody }) {
+              if (!err && imageBody) {
+                // store new image on S3 bucket
+              }
+            }
+            let thumbnails = [ 70, 400, 650 ]
+            for (let i = 0; i < thumbnails.length; i++) {
+              kraken(uri, thumbnails[i], callback)
+            }
           }
         }
       })
