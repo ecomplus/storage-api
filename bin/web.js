@@ -245,7 +245,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             uri
           })
 
-          if (/.*\.(jpg|png|jpeg)/i.test(filename)) {
+          if (/.*\.(jpg|png|jpeg|webp)/i.test(filename)) {
             // optimize image
             kraken(uri)
           }
