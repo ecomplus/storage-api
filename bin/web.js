@@ -6,6 +6,8 @@ const logger = require('./../lib/Logger.js')
 const auth = require('./../lib/Auth.js')
 // AWS SDK API abstraction
 const Aws = require('./../lib/Aws.js')
+// Kraken.io API abstraction
+const Kraken = require('./../lib/Kraken.js')
 
 // NodeJS filesystem module
 const fs = require('fs')
@@ -35,7 +37,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       port,
       baseUri,
       adminBaseUri,
-      doSpace
+      doSpace,
+      krakenAuth
     } = JSON.parse(data)
 
     // S3 endpoint to DigitalOcean Spaces
@@ -46,6 +49,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       createBucket,
       runMethod
     } = Aws(awsEndpoint, locationConstraint, doSpace)
+
+    // setup Kraken client
+    let kraken = Kraken(krakenAuth)
+    logger.log(kraken)
 
     let sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
