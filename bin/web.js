@@ -260,22 +260,28 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 if (!err) {
                   let { url, imageBody } = data
                   if (imageBody) {
+                    let newKey
+                    if (i > 0) {
+                      newKey = '$thumbs/' + widths[i - 1] + 'px/' + key
+                    } else {
+                      newKey = key
+                    }
                     // PUT new image on S3 bucket
                     runMethod('putObject', {
                       Bucket: bucket,
                       ACL: 'public-read',
                       Body: imageBody,
                       ContentType: mimetype,
-                      Key: '$thumbs/' + i + '/' + key
+                      Key: newKey
                     }).catch((err) => {
                       logger.error(err)
                     })
                   }
-                  if (url) {
-                    imageUrl = url
-                  }
 
                   if (i < widths.length) {
+                    if (url) {
+                      imageUrl = url
+                    }
                     // next image size
                     kraken(imageUrl, widths[i], callback)
                   }
