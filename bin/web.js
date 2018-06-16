@@ -256,8 +256,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               let widths = [ 700, 400, 100 ]
               let i = 0
 
-              let callback = function (err, { url, imageBody }) {
+              let callback = function (err, data) {
                 if (!err) {
+                  let { url, imageBody } = data
                   if (imageBody) {
                     // PUT new image on S3 bucket
                     runMethod('putObject', {
