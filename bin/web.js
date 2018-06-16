@@ -196,7 +196,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let bucket = req.bucket
       // unique object key
       let key = ''
-      let filename
+      let filename, mimetype
 
       // setup multer for file upload
       let upload = multer({
@@ -218,6 +218,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             // keep filename
             filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
             key += Date.now().toString() + '-' + filename
+            mimetype = file.mimetype
             cb(null, key)
           }
         }),
@@ -245,17 +246,44 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             uri
           })
 
-          if (/.*\.(jpg|png|jpeg|webp)/i.test(filename)) {
-            // optimize image
-            var callback = function (err, { imageBody }) {
-              if (!err && imageBody) {
-                // store new image on S3 bucket
+          switch (mimetype) {
+            case 'image/jpeg':
+            case 'image/png':
+            case 'image/webp':
+              // optimize image
+              // URL of image to be optimized
+              let imageUrl = uri
+              let widths = [ 700, 400, 100 ]
+              let i = 0
+
+              let callback = function (err, { url, imageBody }) {
+                if (!err) {
+                  if (imageBody) {
+                    // PUT new image on S3 bucket
+                    runMethod('putObject', {
+                      Bucket: bucket,
+                      ACL: 'public-read',
+                      Body: imageBody,
+                      ContentType: mimetype,
+                      Key: '$thumbs/' + i + '/' + key
+                    }).catch((err) => {
+                      logger.error(err)
+                    })
+                  }
+                  if (url) {
+                    imageUrl = url
+                  }
+                }
+                if (i < widths.length) {
+                  // next image size
+                  kraken(imageUrl, widths[i], callback)
+                }
+                i++
               }
-            }
-            let thumbnails = [ 70, 400, 650 ]
-            for (let i = 0; i < thumbnails.length; i++) {
-              kraken(uri, thumbnails[i], callback)
-            }
+
+              // first image without resize
+              kraken(imageUrl, null, callback)
+              break
           }
         }
       })
