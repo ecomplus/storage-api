@@ -274,12 +274,13 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   if (url) {
                     imageUrl = url
                   }
+
+                  if (i < widths.length) {
+                    // next image size
+                    kraken(imageUrl, widths[i], callback)
+                  }
+                  i++
                 }
-                if (i < widths.length) {
-                  // next image size
-                  kraken(imageUrl, widths[i], callback)
-                }
-                i++
               }
 
               // first image without resize
