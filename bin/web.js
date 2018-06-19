@@ -195,7 +195,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     app.post(urls.upload, (req, res) => {
       let bucket = req.bucket
       // unique object key
-      let key = 's/'
+      let key = '@'
       let filename, mimetype
 
       // setup multer for file upload
@@ -262,7 +262,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   if (imageBody) {
                     let newKey
                     if (i > 0) {
-                      newKey = 'imgs/' + widths[i - 1] + '/' + key
+                      newKey = 'imgs/' + widths[i - 1] + 'px/' + key
                     } else {
                       newKey = key
                     }
