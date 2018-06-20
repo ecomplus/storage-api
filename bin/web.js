@@ -267,7 +267,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       newKey = key
                     }
                     // debug
-                    logger.log(newKey)
+                    // logger.log(newKey)
                     // PUT new image on S3 bucket
                     runMethod('putObject', {
                       Bucket: bucket,
@@ -284,15 +284,19 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     if (url) {
                       imageUrl = url
                     }
-                    // next image size
-                    kraken(imageUrl, widths[i], callback)
+                    setTimeout(() => {
+                      // next image size
+                      kraken(imageUrl, widths[i], callback)
+                      i++
+                    }, 500)
                   }
-                  i++
                 }
               }
 
-              // first image without resize
-              kraken(imageUrl, null, callback)
+              setTimeout(() => {
+                // first image without resize
+                kraken(imageUrl, null, callback)
+              }, 300)
               break
           }
         }
