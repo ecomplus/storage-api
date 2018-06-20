@@ -266,6 +266,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     } else {
                       newKey = key
                     }
+                    // debug
+                    logger.log(newKey)
                     // PUT new image on S3 bucket
                     runMethod('putObject', {
                       Bucket: bucket,
