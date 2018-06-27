@@ -239,12 +239,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         } else {
           // uploaded
           let uri = 'https://' + bucket + '.' + awsEndpoint + '/' + key
-          res.json({
-            bucket,
-            key,
-            // return complete object URL
-            uri
-          })
+          var respond = function () {
+            res.json({
+              bucket,
+              key,
+              // return complete object URL
+              uri
+            })
+          }
 
           switch (mimetype) {
             case 'image/jpeg':
@@ -289,6 +291,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       kraken(imageUrl, widths[i], callback)
                       i++
                     }, 200)
+                  } else {
+                    setTimeout(() => {
+                      // all done
+                      respond()
+                    }, 100)
                   }
                 }
               }
@@ -298,6 +305,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 kraken(imageUrl, null, callback)
               }, 200)
               break
+
+            default:
+              respond()
           }
         }
       })
