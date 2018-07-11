@@ -1,6 +1,5 @@
-<p align="center"><img src="Logo/LogoHor.png" alt="StorageAPI" height="200px"></p>
+<p align="center"><img src="Logo/LogoHor.png" alt="Storage API"></p>
 
-# storage-api
 E-Com Plus Storage API (DO Spaces) Node.js Express App
 
 # Technology stack
