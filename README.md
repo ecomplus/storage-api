@@ -1,4 +1,4 @@
-<p align="center"><img src="Logo/LogoHor.png" alt="Storage API"></p>
+<p><img src="Logo/LogoHor170.png" alt="Storage API"></p>
 
 E-Com Plus Storage API (DO Spaces) Node.js Express App
 
