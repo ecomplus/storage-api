@@ -253,6 +253,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             case 'image/jpeg':
             case 'image/png':
             case 'image/webp':
+            case 'image/gif':
+            case 'image/bmp':
               // optimize image
               // URL of image to be optimized
               let imageUrl = uri
