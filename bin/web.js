@@ -230,21 +230,16 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       }).array('file', 1)
 
       upload(req, res, (err) => {
-        let errorHandler = err => {
+        if (err) {
           // respond with error
           let usrMsg = {
             'en_us': 'This file can not be uploaded',
             'pt_br': 'Este arquivo não pode ser carregado'
           }
           sendError(res, 400, 3001, err.message, usrMsg)
-        }
-
-        if (err) {
-          errorHandler(err)
         } else {
           // uploaded
           let uri = 'https://' + bucket + '.' + awsEndpoint + '/' + key
-          logger.log(uri)
           var respond = function () {
             res.json({
               bucket,
@@ -304,8 +299,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     }, 100)
                   }
                 } else {
-                  logger.error(err)
-                  errorHandler(err)
+                  // respond with error
+                  let usrMsg = {
+                    'en_us': 'Error while handling image, the file may be protected or corrupted',
+                    'pt_br': 'Erro ao manipular a imagem, o arquivo pode estar protegido ou corrompido'
+                  }
+                  sendError(res, 415, uri, err.message, usrMsg)
                 }
               }
 
