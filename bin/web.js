@@ -197,7 +197,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       // unique object key
       let key = '@'
       let filename, mimetype
-      logger.log('upload')
+      // logger.log('upload')
 
       // setup multer for file upload
       let upload = multer({
@@ -230,13 +230,17 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       }).array('file', 1)
 
       upload(req, res, (err) => {
-        if (err) {
+        let errorHandler = err => {
           // respond with error
           let usrMsg = {
             'en_us': 'This file can not be uploaded',
             'pt_br': 'Este arquivo não pode ser carregado'
           }
           sendError(res, 400, 3001, err.message, usrMsg)
+        }
+
+        if (err) {
+          errorHandler(err)
         } else {
           // uploaded
           let uri = 'https://' + bucket + '.' + awsEndpoint + '/' + key
@@ -299,6 +303,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       respond()
                     }, 100)
                   }
+                } else {
+                  logger.error(err)
+                  errorHandler(err)
                 }
               }
 
