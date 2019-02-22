@@ -197,6 +197,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       // unique object key
       let key = '@'
       let filename, mimetype
+      logger.log('upload')
 
       // setup multer for file upload
       let upload = multer({
@@ -239,6 +240,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         } else {
           // uploaded
           let uri = 'https://' + bucket + '.' + awsEndpoint + '/' + key
+          logger.log(uri)
           var respond = function () {
             res.json({
               bucket,
