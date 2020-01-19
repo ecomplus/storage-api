@@ -198,6 +198,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let key = '@'
       let filename, mimetype
       // logger.log('upload')
+      let cacheControl = 'public, max-age=31536000'
 
       // setup multer for file upload
       let upload = multer({
@@ -206,6 +207,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           bucket,
           acl: 'public-read',
           contentType: multerS3.AUTO_CONTENT_TYPE,
+          cacheControl,
           key: (req, file, cb) => {
             let dir = req.query.directory
             if (typeof dir === 'string' && dir.charAt(0) === '/') {
@@ -260,6 +262,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               let imageUrl = uri
               let widths = [ 700, 400, 100 ]
               let i = 0
+              if (!filename.endsWith('.webp')) {
+                // will be converted to WebP
+                key += '.webp'
+              }
 
               let callback = function (err, data) {
                 if (!err) {
@@ -278,7 +284,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       Bucket: bucket,
                       ACL: 'public-read',
                       Body: imageBody,
-                      ContentType: mimetype,
+                      ContentType: 'image/webp',
+                      cacheControl,
                       Key: newKey
                     }).catch((err) => {
                       logger.error(err)
