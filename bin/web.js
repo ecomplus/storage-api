@@ -285,7 +285,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       ACL: 'public-read',
                       Body: imageBody,
                       ContentType: 'image/webp',
-                      cacheControl,
+                      CacheControl: cacheControl,
                       Key: newKey
                     }).catch((err) => {
                       logger.error(err)
