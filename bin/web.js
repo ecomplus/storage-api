@@ -311,11 +311,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   sendError(res, 415, uri, err.message, usrMsg)
                 }
               }
-
-              setTimeout(() => {
-                // first image without resize
-                kraken(uri, null, callback)
-              }, 200)
+              callback()
               break
 
             default:
