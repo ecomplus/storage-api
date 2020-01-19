@@ -258,8 +258,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             case 'image/gif':
             case 'image/bmp':
               // optimize image
-              // URL of image to be optimized
-              let imageUrl = uri
               let widths = [ 700, 400, 100 ]
               let i = 0
               if (!filename.endsWith('.webp')) {
@@ -293,12 +291,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   }
 
                   if (i < widths.length) {
-                    if (url) {
-                      imageUrl = url
-                    }
                     setTimeout(() => {
                       // next image size
-                      kraken(imageUrl, widths[i], callback)
+                      kraken(uri, widths[i], callback)
                       i++
                     }, 200)
                   } else {
@@ -319,7 +314,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
               setTimeout(() => {
                 // first image without resize
-                kraken(imageUrl, null, callback)
+                kraken(uri, null, callback)
               }, 200)
               break
 
