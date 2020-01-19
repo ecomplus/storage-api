@@ -221,6 +221,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             // keep filename
             filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
             key += Date.now().toString() + '-' + filename
+            if (!filename.endsWith('.webp')) {
+              // will be converted to WebP
+              key += '.webp'
+            }
             mimetype = file.mimetype
             cb(null, key)
           }
@@ -260,10 +264,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               // optimize image
               let widths = [ 700, 400, 100 ]
               let i = 0
-              if (!filename.endsWith('.webp')) {
-                // will be converted to WebP
-                key += '.webp'
-              }
 
               let callback = function (err, data) {
                 if (!err) {
