@@ -267,27 +267,29 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
               let callback = function (err, data) {
                 if (!err) {
-                  let { url, imageBody } = data
-                  if (imageBody) {
-                    let newKey
-                    if (i > 0) {
-                      newKey = 'imgs/' + widths[i - 1] + 'px/' + key
-                    } else {
-                      newKey = key
+                  if (data) {
+                    let { url, imageBody } = data
+                    if (imageBody) {
+                      let newKey
+                      if (i > 0) {
+                        newKey = 'imgs/' + widths[i - 1] + 'px/' + key
+                      } else {
+                        newKey = key
+                      }
+                      // debug
+                      // logger.log(newKey)
+                      // PUT new image on S3 bucket
+                      runMethod('putObject', {
+                        Bucket: bucket,
+                        ACL: 'public-read',
+                        Body: imageBody,
+                        ContentType: 'image/webp',
+                        CacheControl: cacheControl,
+                        Key: newKey
+                      }).catch((err) => {
+                        logger.error(err)
+                      })
                     }
-                    // debug
-                    // logger.log(newKey)
-                    // PUT new image on S3 bucket
-                    runMethod('putObject', {
-                      Bucket: bucket,
-                      ACL: 'public-read',
-                      Body: imageBody,
-                      ContentType: 'image/webp',
-                      CacheControl: cacheControl,
-                      Key: newKey
-                    }).catch((err) => {
-                      logger.error(err)
-                    })
                   }
 
                   if (i < widths.length) {
