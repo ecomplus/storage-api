@@ -295,7 +295,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   if (i < widths.length) {
                     setTimeout(() => {
                       // next image size
-                      kraken(uri, widths[i], callback)
+                      kraken(uri, widths[i], callback, mimetype !== 'image/webp')
                       i++
                     }, 200)
                   } else {
