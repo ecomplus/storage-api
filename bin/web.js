@@ -273,8 +273,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       let newKey
                       if (i > 0) {
                         newKey = 'imgs/' + widths[i - 1] + 'px/' + key
-                      } else {
+                      } else if (i > -1) {
                         newKey = key
+                      } else {
+                        newKey = key.replace(/\.webp$/, '')
                       }
                       // debug
                       // logger.log(newKey)
@@ -298,13 +300,18 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       kraken(uri, widths[i], callback, mimetype !== 'image/webp')
                       i++
                     }, 200)
-                  } else {
+                  } else if (i > -1) {
                     setTimeout(() => {
-                      // all done
+                      // all WebP variations done
+                      if (mimetype !== 'image/webp') {
+                        // save fallback with middle size
+                        kraken(uri, widths[1], callback, false)
+                        i = -1
+                      }
                       respond()
                     }, 100)
                   }
-                } else {
+                } else if (i > -1) {
                   // respond with error
                   let usrMsg = {
                     'en_us': 'Error while handling image, the file may be protected or corrupted',
