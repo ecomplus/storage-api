@@ -198,10 +198,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let key = '@'
       let filename, mimetype
       // logger.log('upload')
-      let cacheControl = 'public, max-age=31536000'
+      const cacheControl = 'public, max-age=31536000'
 
       // setup multer for file upload
-      let upload = multer({
+      const upload = multer({
         storage: multerS3({
           s3,
           bucket,
@@ -221,10 +221,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             // keep filename
             filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
             key += Date.now().toString() + '-' + filename
-            if (!filename.endsWith('.webp')) {
-              // will be converted to WebP
-              key += '.webp'
-            }
             mimetype = file.mimetype
             cb(null, key)
           }
@@ -238,9 +234,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       upload(req, res, (err) => {
         if (err) {
           // respond with error
-          let usrMsg = {
-            'en_us': 'This file can not be uploaded',
-            'pt_br': 'Este arquivo não pode ser carregado'
+          const usrMsg = {
+            en_us: 'This file can not be uploaded',
+            pt_br: 'Este arquivo não pode ser carregado'
           }
           sendError(res, 400, 3001, err.message, usrMsg)
         } else {
