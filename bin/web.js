@@ -315,7 +315,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                           // save fallback with middle size
                           isSavingFallback = true
                           kraken(uri, widths[1], callback, false)
-                        }, 100)
+                        }, 4000)
                       }
                     }, 100)
                   }
