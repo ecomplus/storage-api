@@ -264,6 +264,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               // optimize image
               let widths = [ 700, 400, 100 ]
               let i = 0
+              let isSavingFallback = false
 
               let callback = function (err, data) {
                 if (!err) {
@@ -273,7 +274,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       let newKey
                       if (i > 0) {
                         newKey = 'imgs/' + widths[i - 1] + 'px/' + key
-                      } else if (i > -1) {
+                      } else if (!isSavingFallback) {
                         newKey = key
                       } else {
                         newKey = 'imgs/fbk/' + key.replace(/\.webp$/, '')
@@ -300,18 +301,19 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       kraken(uri, widths[i], callback, mimetype !== 'image/webp')
                       i++
                     }, 200)
-                  } else if (i > -1) {
+                  } else if (!isSavingFallback) {
                     setTimeout(() => {
                       // all WebP variations done
                       if (mimetype !== 'image/webp') {
                         // save fallback with middle size
-                        i = -1
+                        isSavingFallback = true
+                        logger.log(key)
                         kraken(uri, widths[1], callback, false)
                       }
                       respond()
                     }, 100)
                   }
-                } else if (i > -1) {
+                } else if (!isSavingFallback) {
                   // respond with error
                   let usrMsg = {
                     'en_us': 'Error while handling image, the file may be protected or corrupted',
