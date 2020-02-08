@@ -33,7 +33,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // can't read config file
     throw err
   } else {
-    let {
+    const {
       port,
       baseUri,
       adminBaseUri,
@@ -42,33 +42,33 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     } = JSON.parse(data)
 
     // S3 endpoint to DigitalOcean Spaces
-    let locationConstraint = doSpace.datacenter
-    let awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
-    let {
+    const locationConstraint = doSpace.datacenter
+    const awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
+    const {
       s3,
       createBucket,
       runMethod
     } = Aws(awsEndpoint, locationConstraint, doSpace)
 
     // setup Kraken client
-    let kraken = Kraken(krakenAuth)
+    const kraken = Kraken(krakenAuth)
 
-    let sendError = (res, status, code, devMsg, usrMsg) => {
+    const sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
         devMsg = 'Unknow error'
       }
       if (!usrMsg) {
         usrMsg = {
-          'en_us': 'Unexpected error, try again later',
-          'pt_br': 'Erro inesperado, tente novamente mais tarde'
+          en_us: 'Unexpected error, try again later',
+          pt_br: 'Erro inesperado, tente novamente mais tarde'
         }
       }
       // send error response
       res.status(status).json({
-        'status': status,
-        'error_code': code,
-        'message': devMsg,
-        'user_message': usrMsg
+        status: status,
+        error_code: code,
+        message: devMsg,
+        user_message: usrMsg
       })
     }
 
@@ -89,14 +89,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // new database client
     const client = redis.createClient()
     // Redis key pattern
-    let Key = (storeId) => 'stg:' + storeId
+    const Key = (storeId) => 'stg:' + storeId
 
-    let middlewares = [
+    const middlewares = [
       (req, res, next) => {
         // check store ID
-        let storeId = parseInt(req.params.store, 10)
+        const storeId = parseInt(req.params.store, 10)
         if (storeId >= 100) {
-          let authCallback = (err, authRes) => {
+          const authCallback = (err, authRes) => {
             if (!err) {
               if (authRes === true) {
                 // authenticated
@@ -105,10 +105,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 next()
               } else {
                 // unauthorized
-                let devMsg = 'Unauthorized, invalid X-My-ID and X-Access-Token authentication headers'
-                let usrMsg = {
-                  'en_us': 'No authorization for the requested resource',
-                  'pt_br': 'Sem autorização para o recurso solicitado'
+                const devMsg = 'Unauthorized, invalid X-My-ID and X-Access-Token authentication headers'
+                const usrMsg = {
+                  en_us: 'No authorization for the requested resource',
+                  pt_br: 'Sem autorização para o recurso solicitado'
                 }
                 sendError(res, 401, 103, devMsg, usrMsg)
               }
@@ -122,16 +122,16 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           }
 
           // check authentication
-          let myId = req.get('X-My-ID')
-          let accessToken = req.get('X-Access-Token')
+          const myId = req.get('X-My-ID')
+          const accessToken = req.get('X-Access-Token')
           if (myId && accessToken) {
             auth(storeId, myId, accessToken, authCallback)
           } else {
-            let devMsg = 'Undefined user ID (X-My-ID) or Access Token (X-Access-Token)'
+            const devMsg = 'Undefined user ID (X-My-ID) or Access Token (X-Access-Token)'
             sendError(res, 403, 102, devMsg)
           }
         } else {
-          let devMsg = 'Nonexistent or invalid Store ID'
+          const devMsg = 'Nonexistent or invalid Store ID'
           sendError(res, 403, 101, devMsg)
         }
       },
@@ -145,10 +145,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               next()
             } else {
               // not found
-              let devMsg = 'No storage bucket found for this store ID'
-              let usrMsg = {
-                'en_us': 'There is no file database configured for this store',
-                'pt_br': 'Não há banco de arquivos configurado para esta loja'
+              const devMsg = 'No storage bucket found for this store ID'
+              const usrMsg = {
+                en_us: 'There is no file database configured for this store',
+                pt_br: 'Não há banco de arquivos configurado para esta loja'
               }
               sendError(res, 404, 122, devMsg, usrMsg)
             }
@@ -162,8 +162,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     ]
 
     // API routes for specific store
-    let apiPath = '/:store' + baseUri
-    let urls = {
+    const apiPath = '/:store' + baseUri
+    const urls = {
       upload: apiPath + 'upload.json',
       s3: apiPath + 's3/:method.json'
     }
@@ -175,7 +175,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       // expose API endpoints
       res.json({
         endpoints: urls,
-        verbs: [ 'POST' ],
+        verbs: ['POST'],
         reference: [
           'https://github.com/ecomclub/storage-api/wiki',
           'https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html'
@@ -185,7 +185,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     app.get(apiPath, (req, res) => {
       // GET bucket name
-      let bucket = req.bucket
+      const bucket = req.bucket
       res.json({
         bucket,
         host: bucket + '.' + awsEndpoint
@@ -193,7 +193,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     })
 
     app.post(urls.upload, (req, res) => {
-      let bucket = req.bucket
+      const bucket = req.bucket
       // unique object key
       let key = '@'
       let filename, mimetype
@@ -263,7 +263,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             case 'image/gif':
             case 'image/bmp':
               // optimize image
-              widths = [700, 400, 100]
+              widths = [700, 350]
               i = 0
               isSavingFallback = false
 
@@ -344,7 +344,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       if (params) {
         if (typeof params !== 'object' || Array.isArray(params)) {
           // invalid body
-          let devMsg = 'Request body (method params) must be empty or a valid JSON object'
+          const devMsg = 'Request body (method params) must be empty or a valid JSON object'
           sendError(res, 400, 3013, devMsg)
           return
         }
@@ -354,14 +354,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       }
 
       // run an AWS S3 method
-      let method = req.params.method
+      const method = req.params.method
       if (!/Object/.test(method)) {
         // forbidden
-        let devMsg = 'You are able to call only object methods'
+        const devMsg = 'You are able to call only object methods'
         sendError(res, 403, 3011, devMsg)
       } else if (typeof s3[method] !== 'function') {
         // not found
-        let devMsg = 'Invalid method name, not found' +
+        const devMsg = 'Invalid method name, not found' +
           '\nAvailable AWS S3 methods:' +
           '\nhttps://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html'
         sendError(res, 404, 3012, devMsg)
@@ -384,10 +384,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     app.get(adminBaseUri + 'setup/:store/', (req, res) => {
       // check store ID
-      let storeId = parseInt(req.params.store, 10)
+      const storeId = parseInt(req.params.store, 10)
       if (storeId >= 100) {
         // check request origin IP
-        let ip = req.get('X-Real-IP') || req.connection.remoteAddress
+        const ip = req.get('X-Real-IP') || req.connection.remoteAddress
         if (ip) {
           switch (ip) {
             case '127.0.0.1':
