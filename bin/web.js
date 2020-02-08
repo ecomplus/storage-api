@@ -245,7 +245,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           sendError(res, 400, 3001, err.message, usrMsg)
         } else {
           // uploaded
-          let uri = 'https://' + bucket + '.' + awsEndpoint + '/' + key
+          const uri = 'https://' + bucket + '.' + awsEndpoint + '/' + key
           var respond = function () {
             res.json({
               bucket,
@@ -254,6 +254,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               uri
             })
           }
+          let widths, i, isSavingFallback, callback
 
           switch (mimetype) {
             case 'image/jpeg':
@@ -262,22 +263,22 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             case 'image/gif':
             case 'image/bmp':
               // optimize image
-              let widths = [ 700, 400, 100 ]
-              let i = 0
-              let isSavingFallback = false
+              widths = [700, 400, 100]
+              i = 0
+              isSavingFallback = false
 
-              let callback = function (err, data) {
+              callback = function (err, data) {
                 if (!err) {
                   if (data) {
-                    let { url, imageBody } = data
+                    const { imageBody } = data
                     if (imageBody) {
                       let newKey
-                      if (i > 0) {
+                      if (isSavingFallback) {
+                        newKey = 'imgs/flk/' + key.replace(/\.webp$/, '')
+                      } else if (i > 0) {
                         newKey = 'imgs/' + widths[i - 1] + 'px/' + key
-                      } else if (!isSavingFallback) {
-                        newKey = key
                       } else {
-                        newKey = 'imgs/fbk/' + key.replace(/\.webp$/, '')
+                        newKey = key
                       }
                       // debug
                       // logger.log(newKey)
@@ -303,21 +304,25 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     }, 200)
                   } else if (!isSavingFallback) {
                     setTimeout(() => {
-                      // all WebP variations done
-                      if (mimetype !== 'image/webp') {
-                        // save fallback with middle size
-                        isSavingFallback = true
-                        logger.log(key)
-                        kraken(uri, widths[1], callback, false)
-                      }
+                      // all done
                       respond()
+                      if (mimetype !== 'image/webp') {
+                        setTimeout(() => {
+                          // save fallback with middle size
+                          isSavingFallback = true
+                          kraken(uri, widths[1], callback, false)
+                          logger.log(key)
+                        }, 100)
+                      } else {
+                        logger.log(key)
+                      }
                     }, 100)
                   }
                 } else if (!isSavingFallback) {
                   // respond with error
-                  let usrMsg = {
-                    'en_us': 'Error while handling image, the file may be protected or corrupted',
-                    'pt_br': 'Erro ao manipular a imagem, o arquivo pode estar protegido ou corrompido'
+                  const usrMsg = {
+                    en_us: 'Error while handling image, the file may be protected or corrupted',
+                    pt_br: 'Erro ao manipular a imagem, o arquivo pode estar protegido ou corrompido'
                   }
                   sendError(res, 415, uri, err.message, usrMsg)
                 }
