@@ -287,7 +287,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                         Bucket: bucket,
                         ACL: 'public-read',
                         Body: imageBody,
-                        ContentType: 'image/webp',
+                        ContentType: isSavingFallback ? mimetype : 'image/webp',
                         CacheControl: cacheControl,
                         Key: newKey
                       }).then(() => {
@@ -315,7 +315,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                           // save fallback with middle size
                           isSavingFallback = true
                           kraken(uri, 350, callback, false)
-                        }, 8000)
+                        }, 4000)
                       }
                     }, 100)
                   }
