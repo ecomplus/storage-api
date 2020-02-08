@@ -269,21 +269,21 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 const { url, imageBody } = data
                 if (imageBody) {
                   let newKey
-                  const size = widths[i - 1]
                   if (i > 0) {
-                    newKey = 'imgs/' + size + 'px/' + key
+                    const label = i === 1 ? 'big' : i === 2 ? 'normal' : 'small'
+                    newKey = `imgs/${label}/${key}`
                     if (isWebp) {
                       // converted to WebP
                       newKey += '.webp'
                     } else {
                       lastOptimizedUri = url
                     }
+                    picture[label] = {
+                      url: mountUri(newKey),
+                      size: widths[i - 1]
+                    }
                   } else {
                     newKey = key
-                  }
-                  picture[i === 1 ? 'big' : i === 2 ? 'normal' : 'small'] = {
-                    url: mountUri(newKey),
-                    size
                   }
 
                   // PUT new image on S3 bucket
