@@ -290,6 +290,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                         ContentType: 'image/webp',
                         CacheControl: cacheControl,
                         Key: newKey
+                      }).then(() => {
+                        if (isSavingFallback) {
+                          logger.log(key)
+                        }
                       }).catch((err) => {
                         logger.error(err)
                       })
@@ -311,10 +315,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                           // save fallback with middle size
                           isSavingFallback = true
                           kraken(uri, widths[1], callback, false)
-                          logger.log(key)
                         }, 100)
-                      } else {
-                        logger.log(key)
                       }
                     }, 100)
                   }
