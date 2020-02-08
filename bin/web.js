@@ -221,6 +221,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             // keep filename
             filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
             key += Date.now().toString() + '-' + filename
+            if (!filename.endsWith('.webp')) {
+              // will be converted to WebP
+              key += '.webp'
+            }
             mimetype = file.mimetype
             cb(null, key)
           }
@@ -270,7 +274,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     if (imageBody) {
                       let newKey
                       if (isSavingFallback) {
-                        newKey = 'imgs/flk/' + key.replace(/\.webp$/, '')
+                        newKey = 'imgs/fk/' + key.replace(/\.webp$/, '')
                       } else if (i > 0) {
                         newKey = 'imgs/' + widths[i - 1] + 'px/' + key
                       } else {
@@ -310,8 +314,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                         setTimeout(() => {
                           // save fallback with middle size
                           isSavingFallback = true
-                          kraken(uri, widths[1], callback, false)
-                        }, 4000)
+                          kraken(uri, 350, callback, false)
+                        }, 8000)
                       }
                     }, 100)
                   }
