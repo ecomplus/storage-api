@@ -276,7 +276,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       } else if (i > -1) {
                         newKey = key
                       } else {
-                        newKey = key.replace(/\.webp$/, '')
+                        newKey = 'imgs/fbk/' + key.replace(/\.webp$/, '')
                       }
                       // debug
                       // logger.log(newKey)
@@ -305,8 +305,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       // all WebP variations done
                       if (mimetype !== 'image/webp') {
                         // save fallback with middle size
-                        kraken(uri, widths[1], callback, false)
                         i = -1
+                        kraken(uri, widths[1], callback, false)
                       }
                       respond()
                     }, 100)
