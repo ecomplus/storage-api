@@ -221,10 +221,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             // keep filename
             filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
             key += Date.now().toString() + '-' + filename
-            if (!filename.endsWith('.webp')) {
-              // will be converted to WebP
-              key += '.webp'
-            }
             mimetype = file.mimetype
             cb(null, key)
           }
@@ -245,92 +241,101 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           sendError(res, 400, 3001, err.message, usrMsg)
         } else {
           // uploaded
-          const uri = 'https://' + bucket + '.' + awsEndpoint + '/' + key
-          var respond = function () {
+          const mountUri = key => `https://${bucket}.${awsEndpoint}/${key}`
+          const uri = mountUri(key)
+          const picture = {
+            zoom: { url: uri }
+          }
+          // resize/optimize image
+          const widths = [700, 350]
+          let i = 0
+          let isWebp = false
+          let lastOptimizedUri
+
+          const respond = function () {
+            logger.log(key)
             res.json({
               bucket,
               key,
               // return complete object URL
-              uri
+              uri,
+              picture
             })
           }
-          let widths, i, isSavingFallback, callback
+
+          const callback = function (err, data) {
+            if (!err) {
+              if (data) {
+                const { url, imageBody } = data
+                if (imageBody) {
+                  let newKey
+                  const size = widths[i - 1]
+                  if (i > 0) {
+                    newKey = 'imgs/' + size + 'px/' + key
+                    if (isWebp) {
+                      // converted to WebP
+                      newKey += '.webp'
+                    } else {
+                      lastOptimizedUri = url
+                    }
+                  } else {
+                    newKey = key
+                  }
+                  picture[i === 1 ? 'big' : i === 2 ? 'normal' : 'small'] = {
+                    url: mountUri(newKey),
+                    size
+                  }
+
+                  // PUT new image on S3 bucket
+                  runMethod('putObject', {
+                    Bucket: bucket,
+                    ACL: 'public-read',
+                    Body: imageBody,
+                    ContentType: isWebp ? 'image/webp' : mimetype,
+                    CacheControl: cacheControl,
+                    Key: newKey
+                  }).catch((err) => {
+                    logger.error(err)
+                  })
+                }
+              }
+
+              if (i < widths.length) {
+                setTimeout(() => {
+                  // next image size
+                  kraken(
+                    lastOptimizedUri || uri,
+                    lastOptimizedUri && isWebp ? false : widths[i],
+                    callback,
+                    isWebp
+                  )
+                  if (!isWebp) {
+                    isWebp = true
+                  } else {
+                    i++
+                  }
+                }, 200)
+              } else {
+                setTimeout(() => {
+                  // all done
+                  respond()
+                }, 100)
+              }
+            } else {
+              // respond with error
+              const usrMsg = {
+                en_us: 'Error while handling image, the file may be protected or corrupted',
+                pt_br: 'Erro ao manipular a imagem, o arquivo pode estar protegido ou corrompido'
+              }
+              sendError(res, 415, uri, err.message, usrMsg)
+            }
+          }
 
           switch (mimetype) {
             case 'image/jpeg':
             case 'image/png':
-            case 'image/webp':
-            case 'image/gif':
-            case 'image/bmp':
-              // optimize image
-              widths = [700, 350]
-              i = 0
-              isSavingFallback = false
-
-              callback = function (err, data) {
-                if (!err) {
-                  if (data) {
-                    const { imageBody } = data
-                    if (imageBody) {
-                      let newKey
-                      if (isSavingFallback) {
-                        newKey = 'imgs/fk/' + key.replace(/\.webp$/, '')
-                      } else if (i > 0) {
-                        newKey = 'imgs/' + widths[i - 1] + 'px/' + key
-                      } else {
-                        newKey = key
-                      }
-                      // debug
-                      // logger.log(newKey)
-                      // PUT new image on S3 bucket
-                      runMethod('putObject', {
-                        Bucket: bucket,
-                        ACL: 'public-read',
-                        Body: imageBody,
-                        ContentType: isSavingFallback ? mimetype : 'image/webp',
-                        CacheControl: cacheControl,
-                        Key: newKey
-                      }).then(() => {
-                        if (isSavingFallback) {
-                          logger.log(key)
-                        }
-                      }).catch((err) => {
-                        logger.error(err)
-                      })
-                    }
-                  }
-
-                  if (i < widths.length) {
-                    setTimeout(() => {
-                      // next image size
-                      kraken(uri, widths[i], callback, mimetype !== 'image/webp')
-                      i++
-                    }, 200)
-                  } else if (!isSavingFallback) {
-                    setTimeout(() => {
-                      // all done
-                      respond()
-                      if (mimetype !== 'image/webp') {
-                        setTimeout(() => {
-                          // save fallback with middle size
-                          isSavingFallback = true
-                          kraken(uri, 350, callback, false)
-                        }, 4000)
-                      }
-                    }, 100)
-                  }
-                } else if (!isSavingFallback) {
-                  // respond with error
-                  const usrMsg = {
-                    en_us: 'Error while handling image, the file may be protected or corrupted',
-                    pt_br: 'Erro ao manipular a imagem, o arquivo pode estar protegido ou corrompido'
-                  }
-                  sendError(res, 415, uri, err.message, usrMsg)
-                }
-              }
               callback()
               break
-
             default:
               respond()
           }
