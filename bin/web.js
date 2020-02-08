@@ -220,7 +220,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             }
             // keep filename
             filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
-            key += Date.now().toString() + '-' + filename
+            key += 'v2-' + Date.now().toString() + '-' + filename
             mimetype = file.mimetype
             cb(null, key)
           }
