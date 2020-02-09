@@ -248,7 +248,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           }
           // resize/optimize image
           const widths = [700, 350]
-          let i = 0
+          let i = -1
           let isWebp = false
           let lastOptimizedUri
 
@@ -270,7 +270,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   const { url, imageBody } = data
                   if (imageBody) {
                     let newKey
-                    const label = i === 1 ? 'big' : i === 2 ? 'normal' : 'small'
+                    const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
                     newKey = `imgs/${label}/${key}`
                     if (isWebp) {
                       // converted to WebP
@@ -280,7 +280,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     }
                     picture[label] = {
                       url: mountUri(newKey),
-                      size: widths[i - 1]
+                      size: widths[i]
                     }
 
                     // PUT new image on S3 bucket
@@ -303,21 +303,21 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               })
 
                 .then(() => {
-                  if (i < widths.length) {
+                  const nextToWebp = Boolean(lastOptimizedUri && !isWebp)
+                  if (i < widths.length || nextToWebp) {
                     setTimeout(() => {
                       // next image size
+                      if (!nextToWebp) {
+                        i++
+                      } else {
+                        isWebp = true
+                      }
                       kraken(
                         lastOptimizedUri || uri,
                         isWebp ? false : widths[i],
                         callback,
                         isWebp
                       )
-                      if (lastOptimizedUri && !isWebp) {
-                        isWebp = true
-                      } else {
-                        isWebp = false
-                        i++
-                      }
                     }, 200)
                   } else {
                     setTimeout(() => {
