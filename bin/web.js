@@ -38,8 +38,18 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       baseUri,
       adminBaseUri,
       doSpace,
-      krakenAuth
+      krakenAuth,
+      pictureSizes
     } = JSON.parse(data)
+
+    const pictureOptims = (pictureSizes || [700, 350]).reduce((optims, size, i) => {
+      const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
+      optims.push(
+        { size, label, webp: false },
+        { size, label, webp: true }
+      )
+      return optims
+    }, [])
 
     // S3 endpoint to DigitalOcean Spaces
     const locationConstraint = doSpace.datacenter
@@ -246,21 +256,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           const picture = {
             zoom: { url: uri }
           }
-
           // resize/optimize image
-          const optims = [{
-            size: 700,
-            webp: false
-          }, {
-            size: 700,
-            webp: true
-          }, {
-            size: 350,
-            webp: false
-          }, {
-            size: 350,
-            webp: true
-          }]
           let i = -1
           let lastOptimizedUri
 
@@ -282,9 +278,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   const { url, imageBody } = data
                   if (imageBody) {
                     let newKey
-                    const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
+                    const { label, size, webp } = pictureOptims[i]
                     newKey = `imgs/${label}/${key}`
-                    const { size, webp } = optims[i]
                     if (webp) {
                       // converted to WebP
                       newKey += '.webp'
@@ -314,10 +309,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                 .then(() => {
                   i++
-                  if (i < optims.length) {
+                  if (i < pictureOptims.length) {
                     setTimeout(() => {
                       // next image size
-                      const { size, webp } = optims[i]
+                      const { size, webp } = pictureOptims[i]
                       kraken(
                         lastOptimizedUri || uri,
                         webp ? false : size,
