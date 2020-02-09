@@ -253,7 +253,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           let lastOptimizedUri
 
           const respond = function () {
-            logger.log(key)
+            logger.log(`${bucket} ${key}`)
             res.json({
               bucket,
               key,
@@ -265,11 +265,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
           const callback = function (err, data) {
             if (!err) {
-              if (data) {
-                const { url, imageBody } = data
-                if (imageBody) {
-                  let newKey
-                  if (i > 0) {
+              new Promise(resolve => {
+                if (data) {
+                  const { url, imageBody } = data
+                  if (imageBody) {
+                    let newKey
                     const label = i === 1 ? 'big' : i === 2 ? 'normal' : 'small'
                     newKey = `imgs/${label}/${key}`
                     if (isWebp) {
@@ -282,45 +282,49 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       url: mountUri(newKey),
                       size: widths[i - 1]
                     }
-                  } else {
-                    newKey = key
-                  }
 
-                  // PUT new image on S3 bucket
-                  runMethod('putObject', {
-                    Bucket: bucket,
-                    ACL: 'public-read',
-                    Body: imageBody,
-                    ContentType: isWebp ? 'image/webp' : mimetype,
-                    CacheControl: cacheControl,
-                    Key: newKey
-                  }).catch((err) => {
-                    logger.error(err)
-                  })
+                    // PUT new image on S3 bucket
+                    return runMethod('putObject', {
+                      Bucket: bucket,
+                      ACL: 'public-read',
+                      Body: imageBody,
+                      ContentType: isWebp ? 'image/webp' : mimetype,
+                      CacheControl: cacheControl,
+                      Key: newKey
+                    })
+                      .catch((err) => {
+                        logger.error(err)
+                      })
+                      .finally(resolve)
+                  }
                 }
-              }
+                resolve()
+              })
 
-              if (i < widths.length) {
-                setTimeout(() => {
-                  // next image size
-                  kraken(
-                    lastOptimizedUri || uri,
-                    lastOptimizedUri && isWebp ? false : widths[i],
-                    callback,
-                    isWebp
-                  )
-                  if (!isWebp) {
-                    isWebp = true
+                .finally(() => {
+                  if (i < widths.length) {
+                    setTimeout(() => {
+                      // next image size
+                      kraken(
+                        lastOptimizedUri || uri,
+                        isWebp ? false : widths[i],
+                        callback,
+                        isWebp
+                      )
+                      if (lastOptimizedUri && !isWebp) {
+                        isWebp = true
+                      } else {
+                        isWebp = false
+                        i++
+                      }
+                    }, 200)
                   } else {
-                    i++
+                    setTimeout(() => {
+                      // all done
+                      respond()
+                    }, 100)
                   }
-                }, 200)
-              } else {
-                setTimeout(() => {
-                  // all done
-                  respond()
-                }, 100)
-              }
+                })
             } else {
               // respond with error
               const usrMsg = {
