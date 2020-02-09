@@ -246,10 +246,22 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           const picture = {
             zoom: { url: uri }
           }
+
           // resize/optimize image
-          const widths = [700, 350]
+          const optims = [{
+            size: 700,
+            webp: false
+          }, {
+            size: 700,
+            webp: true
+          }, {
+            size: 350,
+            webp: false
+          }, {
+            size: 350,
+            webp: true
+          }]
           let i = -1
-          let isWebp = false
           let lastOptimizedUri
 
           const respond = function () {
@@ -272,23 +284,21 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     let newKey
                     const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
                     newKey = `imgs/${label}/${key}`
-                    if (isWebp) {
+                    const { size, webp } = optims[i]
+                    if (webp) {
                       // converted to WebP
                       newKey += '.webp'
                     } else {
                       lastOptimizedUri = url
                     }
-                    picture[label] = {
-                      url: mountUri(newKey),
-                      size: widths[i]
-                    }
+                    picture[label] = { url: mountUri(newKey), size }
 
                     // PUT new image on S3 bucket
                     return runMethod('putObject', {
                       Bucket: bucket,
                       ACL: 'public-read',
                       Body: imageBody,
-                      ContentType: isWebp ? 'image/webp' : mimetype,
+                      ContentType: webp ? 'image/webp' : mimetype,
                       CacheControl: cacheControl,
                       Key: newKey
                     })
@@ -303,20 +313,16 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               })
 
                 .then(() => {
-                  const nextToWebp = Boolean(lastOptimizedUri && !isWebp)
-                  if (i < widths.length || nextToWebp) {
+                  if (i < optims.length) {
                     setTimeout(() => {
                       // next image size
-                      if (!nextToWebp) {
-                        i++
-                      } else {
-                        isWebp = true
-                      }
+                      i++
+                      const { size, webp } = optims[i]
                       kraken(
                         lastOptimizedUri || uri,
-                        isWebp ? false : widths[i],
+                        webp ? false : size,
                         callback,
-                        isWebp
+                        webp
                       )
                     }, 200)
                   } else {
