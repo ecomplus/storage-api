@@ -292,16 +292,17 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       CacheControl: cacheControl,
                       Key: newKey
                     })
+                      .then(resolve)
                       .catch((err) => {
                         logger.error(err)
+                        resolve()
                       })
-                      .finally(resolve)
                   }
                 }
                 resolve()
               })
 
-                .finally(() => {
+                .then(() => {
                   if (i < widths.length) {
                     setTimeout(() => {
                       // next image size
