@@ -313,10 +313,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               })
 
                 .then(() => {
+                  i++
                   if (i < optims.length) {
                     setTimeout(() => {
                       // next image size
-                      i++
                       const { size, webp } = optims[i]
                       kraken(
                         lastOptimizedUri || uri,
