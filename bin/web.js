@@ -204,6 +204,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     app.post(urls.upload, (req, res) => {
       const bucket = req.bucket
+      logger.log(`${bucket} Uploading...`)
       // unique object key
       let key = '@'
       let filename, mimetype
@@ -242,6 +243,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       }).array('file', 1)
 
       upload(req, res, (err) => {
+        logger.log(`${bucket} ${key} Uploaded to S3`)
         if (err) {
           // respond with error
           const usrMsg = {
@@ -261,7 +263,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           let lastOptimizedUri
 
           const respond = function () {
-            logger.log(`${bucket} ${key}`)
+            logger.log(`${bucket} ${key} All optimizations done`)
             res.json({
               bucket,
               key,
