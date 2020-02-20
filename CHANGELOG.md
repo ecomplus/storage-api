@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [2.0.0](https://github.com/ecomclub/storage-api/compare/v1.2.1...v2.0.0) (2020-02-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lib:** changing manipulation service
+
+### Features
+
+* **web:** update to use cloudinary (best fit format) in place of kraken ([a97872c](https://github.com/ecomclub/storage-api/commit/a97872ce89abd96590c1bcb88ed9ebae4bbb059e))
+
+
+* **lib:** replacing kraken with cloudinary ([1f856be](https://github.com/ecomclub/storage-api/commit/1f856be81f173520a0dd0dc78632f89f6607feca))
+
 ### [1.2.1](https://github.com/ecomclub/storage-api/compare/v1.2.0...v1.2.1) (2020-02-20)
 
 
