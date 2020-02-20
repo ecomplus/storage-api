@@ -35,7 +35,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
   } else {
     const {
       port,
-      hostname,
       baseUri,
       adminBaseUri,
       doSpace,
@@ -181,8 +180,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     const apiPath = '/:store' + baseUri
     const urls = {
       upload: apiPath + 'upload.json',
-      s3: apiPath + 's3/:method.json',
-      krakenCallback: apiPath + 'kraken/callback.json'
+      s3: apiPath + 's3/:method.json'
     }
     // API middlewares
     app.use(apiPath, ...middlewares)
@@ -207,12 +205,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         bucket,
         host: bucket + '.' + awsEndpoint
       })
-    })
-
-    app.post(urls.krakenCallback, (req, res) => {
-      logger.log(req.body)
-      // TODO: treat possible errors here
-      res.send({})
     })
 
     app.post(urls.upload, (req, res) => {
@@ -302,14 +294,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                 setTimeout(() => {
                   // image resize/optimization with Kraken.io
-                  let callbackPath = urls.krakenCallback
-                  for (const paramKey in req.params) {
-                    if (req.params[paramKey]) {
-                      callbackPath = callbackPath.replace(`:${paramKey}`, req.params[paramKey])
-                    }
-                  }
                   kraken(
-                    `${(hostname || 'https://apx-storage.e-com.plus')}${callbackPath}`,
+                    null,
                     lastOptimizedUri || uri,
                     webp ? false : size,
                     webp,
