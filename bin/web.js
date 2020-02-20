@@ -210,6 +210,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     })
 
     app.post(urls.krakenCallback, (req, res) => {
+      logger.log(req.body)
       // TODO: treat possible errors here
       res.send({})
     })
