@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/ecomclub/storage-api/compare/v1.1.0...v1.2.0) (2020-02-20)
+
+
+### Features
+
+* **web:** handling kraken optimization with callback url ([a13f727](https://github.com/ecomclub/storage-api/commit/a13f727e1b14f460bb883b2218ff5d2b7ebb3de2))
+
+
+### Bug Fixes
+
+* **kraken:** returning kraken req id if callback url ([ca3f806](https://github.com/ecomclub/storage-api/commit/ca3f8063828d12e286c5676cf5a0200dc9941280))
+
 ## [1.1.0](https://github.com/ecomclub/storage-api/compare/v1.0.3...v1.1.0) (2020-02-20)
 
 
