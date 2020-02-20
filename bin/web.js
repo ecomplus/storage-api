@@ -54,14 +54,19 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // S3 endpoint to DigitalOcean Spaces
     const locationConstraint = doSpace.datacenter
     const awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
+    const awsConfig = {
+      awsEndpoint,
+      locationConstraint,
+      ...doSpace
+    }
     const {
       s3,
       createBucket,
       runMethod
-    } = Aws(awsEndpoint, locationConstraint, doSpace)
+    } = Aws(awsConfig)
 
     // setup Kraken client
-    const kraken = Kraken(krakenAuth)
+    const kraken = Kraken(krakenAuth, awsConfig)
 
     const sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
@@ -237,8 +242,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           }
         }),
         limits: {
-          // maximum 3mb
-          fileSize: 3000000
+          // maximum 2mb
+          fileSize: 2000000
         }
       }).array('file', 1)
 
@@ -262,7 +267,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           let i = -1
           let lastOptimizedUri
 
-          const respond = function () {
+          const respond = () => {
             logger.log(`${bucket} ${key} All optimizations done`)
             res.json({
               bucket,
@@ -273,62 +278,79 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             })
           }
 
-          const callback = function (err, data) {
+          const callback = (err, data) => {
             if (!err) {
-              new Promise(resolve => {
-                if (data) {
-                  const { url, imageBody } = data
-                  if (imageBody) {
-                    let newKey
-                    const { label, size, webp } = pictureOptims[i]
-                    newKey = `imgs/${label}/${key}`
-                    if (webp) {
-                      // converted to WebP
-                      newKey += '.webp'
-                    } else {
-                      lastOptimizedUri = url
-                    }
-                    picture[label] = { url: mountUri(newKey), size }
-
-                    // PUT new image on S3 bucket
-                    return runMethod('putObject', {
-                      Bucket: bucket,
-                      ACL: 'public-read',
-                      Body: imageBody,
-                      ContentType: webp ? 'image/webp' : mimetype,
-                      CacheControl: cacheControl,
-                      Key: newKey
-                    })
-                      .then(resolve)
-                      .catch((err) => {
-                        logger.error(err)
-                        resolve()
-                      })
-                  }
+              // next image size
+              i++
+              if (i < pictureOptims.length) {
+                let newKey
+                const { label, size, webp } = pictureOptims[i]
+                const contentType = webp ? 'image/webp' : mimetype
+                newKey = `imgs/${label}/${key}`
+                if (webp) {
+                  // converted to WebP
+                  newKey += '.webp'
                 }
-                resolve()
-              })
 
-                .then(() => {
-                  i++
-                  if (i < pictureOptims.length) {
-                    setTimeout(() => {
-                      // next image size
-                      const { size, webp } = pictureOptims[i]
-                      kraken(
-                        lastOptimizedUri || uri,
-                        webp ? false : size,
-                        callback,
-                        webp
-                      )
-                    }, 200)
-                  } else {
-                    setTimeout(() => {
-                      // all done
-                      respond()
-                    }, 100)
-                  }
-                })
+                setTimeout(() => {
+                  // image resize/optimization with Kraken.io
+                  kraken(
+                    lastOptimizedUri || uri,
+                    webp ? false : size,
+                    webp,
+                    {
+                      bucket,
+                      path: newKey,
+                      headers: {
+                        'Cache-Control': cacheControl,
+                        'Content-Type': contentType
+                      }
+                    },
+
+                    (err, data) => {
+                      if (!err && data) {
+                        return new Promise(resolve => {
+                          const { url, imageBody } = data
+                          if (url) {
+                            lastOptimizedUri = url
+                          }
+                          if (imageBody) {
+                            // PUT new image on S3 bucket
+                            return runMethod('putObject', {
+                              Bucket: bucket,
+                              ACL: 'public-read',
+                              Body: imageBody,
+                              ContentType: contentType,
+                              CacheControl: cacheControl,
+                              Key: newKey
+                            })
+                              .then(resolve)
+                              .catch((err) => {
+                                logger.error(err)
+                                resolve(data)
+                              })
+                          }
+                          resolve(data)
+                        })
+
+                          .then(payload => {
+                            if (payload) {
+                              // add to response pictures
+                              picture[label] = { url: mountUri(newKey), size }
+                            }
+                            callback()
+                          })
+                      }
+                      callback(err)
+                    }
+                  )
+                }, 200)
+              } else {
+                setTimeout(() => {
+                  // all done
+                  respond()
+                }, 100)
+              }
             } else {
               // respond with error
               const usrMsg = {
