@@ -1,10 +1,11 @@
 {
   "name": "ecomplus-storage",
-  "version": "0.1.0",
+  "version": "1.0.0-rc",
   "description": "E-Com Plus Storage API Node.js Express App",
   "main": "main.js",
   "scripts": {
-    "test": "node ./main.js"
+    "test": "node ./main.js",
+    "release": "standard-version"
   },
   "author": "E-Com Club",
   "license": "GPL-3.0",
@@ -17,5 +18,17 @@
     "multer-s3": "2.x",
     "body-parser": "1.x",
     "redis": "2.x"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^8.3.5",
+    "@commitlint/config-conventional": "^8.3.4",
+    "husky": "^4.2.3",
+    "standard": "^14.3.1",
+    "standard-version": "^7.1.0"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   }
 }
