@@ -6,8 +6,8 @@ const logger = require('./../lib/Logger')
 const auth = require('./../lib/Auth')
 // AWS SDK API abstraction
 const Aws = require('./../lib/Aws')
-// Kraken.io API abstraction
-const Kraken = require('./../lib/Kraken')
+// Cloudinary API abstraction
+const Cloudinary = require('./../lib/Cloudinary')
 // download image from Kraken temporary CDN
 const download = require('./../lib/Download')
 
@@ -37,12 +37,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
   } else {
     const {
       port,
-      hostname,
+      // hostname,
       baseUri,
       adminBaseUri,
       doSpace,
-      krakenAuth,
-      KrakenUseCallbackUrl,
+      cloudinaryAuth,
       pictureSizes
     } = JSON.parse(data)
 
@@ -69,8 +68,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       runMethod
     } = Aws(awsConfig)
 
-    // setup Kraken client
-    const kraken = Kraken(krakenAuth)
+    // setup Cloudinary client
+    const cloudinary = Cloudinary(cloudinaryAuth)
 
     const sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
@@ -185,7 +184,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     const urls = {
       upload: apiPath + 'upload.json',
       s3: apiPath + 's3/:method.json',
-      krakenCallback: '/kraken/callback.json'
+      manipulationCallback: '/manipulation/callback.json'
     }
     // API middlewares
     app.use(apiPath, ...middlewares)
@@ -270,7 +269,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           }
           // resize/optimize image
           let i = -1
-          let lastOptimizedUri
 
           const respond = () => {
             logger.log(`${bucket} ${key} All optimizations done`)
@@ -283,81 +281,74 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             })
           }
 
-          const callback = (err, data) => {
+          const callback = err => {
             if (!err) {
               // next image size
               i++
               if (i < pictureOptims.length) {
                 let newKey
                 const { label, size, webp } = pictureOptims[i]
-                const contentType = webp ? 'image/webp' : mimetype
                 newKey = `imgs/${label}/${key}`
-                if (webp) {
-                  // converted to WebP
-                  newKey += '.webp'
-                }
 
                 setTimeout(() => {
-                  // image resize/optimization with Kraken.io
-                  kraken(
-                    KrakenUseCallbackUrl
-                      ? `${(hostname || 'https://apx-storage.e-com.plus')}${urls.krakenCallback}`
-                      : null,
-                    lastOptimizedUri || uri,
-                    webp ? false : size,
-                    webp,
-                    {
-                      bucket,
-                      path: newKey,
-                      headers: {
-                        'Cache-Control': cacheControl,
-                        'Content-Type': contentType
-                      }
-                    },
+                  // image resize/optimization with Cloudinary
+                  cloudinary(uri, webp ? false : size, webp, (err, data) => {
+                    if (!err && data) {
+                      return new Promise(resolve => {
+                        const { id, format, url, imageBody } = data
+                        let contentType
 
-                    (err, data) => {
-                      if (!err && data) {
-                        return new Promise(resolve => {
-                          const { id, url, imageBody } = data
-                          if (url && !webp) {
-                            lastOptimizedUri = url
+                        if (webp) {
+                          // fix filepath extension and content type header
+                          if (format) {
+                            if (!newKey.endsWith(format)) {
+                              // converted to best optim format
+                              newKey += `.${format}`
+                            }
+                            contentType = format === 'jpg' ? 'image/jpeg' : `image/${format}`
+                          } else {
+                            // converted to WebP
+                            newKey += '.webp'
+                            contentType = 'image/webp'
                           }
+                        } else {
+                          contentType = mimetype
+                        }
 
-                          if (imageBody || id) {
-                            const s3Options = {
-                              Bucket: bucket,
-                              ACL: 'public-read',
-                              ContentType: contentType,
-                              CacheControl: cacheControl,
-                              Key: newKey
-                            }
-                            if (imageBody) {
-                              // PUT new image on S3 bucket
-                              return runMethod('putObject', { ...s3Options, Body: imageBody })
-                                .then(resolve)
-                                .catch((err) => {
-                                  logger.error(err)
-                                  resolve(data)
-                                })
-                            }
-                            // async handle with callback URL
-                            client.setex(Key(id, true), 600, JSON.stringify(s3Options))
-                            return resolve(true)
+                        if (imageBody || id) {
+                          const s3Options = {
+                            Bucket: bucket,
+                            ACL: 'public-read',
+                            ContentType: contentType,
+                            CacheControl: cacheControl,
+                            Key: newKey
                           }
-                          resolve(false)
+                          if (imageBody) {
+                            // PUT new image on S3 bucket
+                            return runMethod('putObject', { ...s3Options, Body: imageBody })
+                              .then(resolve)
+                              .catch((err) => {
+                                logger.error(err)
+                                resolve(url)
+                              })
+                          }
+                          // async handle with callback URL
+                          client.setex(Key(id, true), 600, JSON.stringify(s3Options))
+                          return resolve(mountUri(newKey))
+                        }
+                        resolve(url)
+                      })
+
+                        .then(url => {
+                          if (url) {
+                            // add to response pictures
+                            picture[label] = { url, size }
+                          }
+                          callback()
                         })
-
-                          .then(payload => {
-                            if (payload !== false) {
-                              // add to response pictures
-                              picture[label] = { url: mountUri(newKey), size }
-                            }
-                            callback()
-                          })
-                      }
-                      callback(err)
                     }
-                  )
+                    callback(err)
+                  })
                 }, 200)
               } else {
                 setTimeout(() => {
@@ -387,14 +378,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       })
     })
 
-    app.use(urls.krakenCallback, (req, res) => {
+    app.use(urls.manipulationCallback, (req, res) => {
       if (req.body) {
-        const url = req.body.kraked_url
+        const { url, id } = req.body
         if (url) {
           download(url, (err, imageBody) => {
             if (!err) {
-              // get s3 options set on redis by Kreken request id
-              const redisKey = Key(req.body.id, true)
+              // get s3 options set on redis by manipulation request id
+              const redisKey = Key(id, true)
               client.get(redisKey, (err, val) => {
                 if (!err) {
                   // PUT new image on S3 bucket
@@ -408,7 +399,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             }
           })
         } else {
-          // TODO: treat Kraken possible errors here
+          // TODO: treat possible errors here
           logger.log(req.body)
         }
       }
