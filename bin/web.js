@@ -42,6 +42,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       adminBaseUri,
       doSpace,
       krakenAuth,
+      KrakenUseCallbackUrl,
       pictureSizes
     } = JSON.parse(data)
 
@@ -299,7 +300,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 setTimeout(() => {
                   // image resize/optimization with Kraken.io
                   kraken(
-                    `${(hostname || 'https://apx-storage.e-com.plus')}${urls.krakenCallback}`,
+                    KrakenUseCallbackUrl
+                      ? `${(hostname || 'https://apx-storage.e-com.plus')}${urls.krakenCallback}`
+                      : null,
                     lastOptimizedUri || uri,
                     webp ? false : size,
                     webp,
