@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.1](https://github.com/ecomclub/storage-api/compare/v1.0.0...v1.0.1) (2020-02-20)
+
+
+### Bug Fixes
+
+* **kraken:** receive callback url as param, set 'callback_url' or 'wait' ([8fecfab](https://github.com/ecomclub/storage-api/commit/8fecfab748c2000609adc659cdd4730cf315d375))
+* **web:** pass calback url to kraken handler ([c91b524](https://github.com/ecomclub/storage-api/commit/c91b52414c32be04d49fb6baa874292555487d99))
+
 ## 1.0.0 (2020-02-20)
 
 
