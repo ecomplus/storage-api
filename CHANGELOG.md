@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/ecomclub/storage-api/compare/v1.2.0...v1.2.1) (2020-02-20)
+
+
+### Bug Fixes
+
+* **web:** no auths middlewares for kraken callback url ([b495fce](https://github.com/ecomclub/storage-api/commit/b495fcefec6c480e1d6b5a907b4cc60b80dddbe4))
+
 ## [1.2.0](https://github.com/ecomclub/storage-api/compare/v1.1.0...v1.2.0) (2020-02-20)
 
 
