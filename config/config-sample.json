@@ -1,5 +1,6 @@
 {
   "port": 3000,
+  "hostname": "https://apx-storage.e-com.plus",
   "baseUri": "/api/v1/",
   "adminBaseUri": "/_admin/",
   "doSpace": {
