@@ -312,7 +312,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       if (!err && data) {
                         return new Promise(resolve => {
                           const { url, imageBody } = data
-                          if (url && !url.endsWith('.webp')) {
+                          if (url && !webp) {
                             lastOptimizedUri = url
                           }
                           if (imageBody) {
