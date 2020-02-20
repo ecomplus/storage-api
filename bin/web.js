@@ -184,7 +184,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     const urls = {
       upload: apiPath + 'upload.json',
       s3: apiPath + 's3/:method.json',
-      krakenCallback: apiPath + 'kraken/callback.json'
+      krakenCallback: '/kraken/callback.json'
     }
     // API middlewares
     app.use(apiPath, ...middlewares)
@@ -298,14 +298,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                 setTimeout(() => {
                   // image resize/optimization with Kraken.io
-                  let callbackPath = urls.krakenCallback
-                  for (const paramKey in req.params) {
-                    if (req.params[paramKey]) {
-                      callbackPath = callbackPath.replace(`:${paramKey}`, req.params[paramKey])
-                    }
-                  }
                   kraken(
-                    `${(hostname || 'https://apx-storage.e-com.plus')}${callbackPath}`,
+                    `${(hostname || 'https://apx-storage.e-com.plus')}${urls.krakenCallback}`,
                     lastOptimizedUri || uri,
                     webp ? false : size,
                     webp,
