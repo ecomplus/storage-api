@@ -66,7 +66,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     } = Aws(awsConfig)
 
     // setup Kraken client
-    const kraken = Kraken(krakenAuth, awsConfig)
+    const kraken = Kraken(krakenAuth)
 
     const sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
