@@ -1,13 +1,15 @@
 'use strict'
 
 // log on files
-const logger = require('./../lib/Logger.js')
+const logger = require('./../lib/Logger')
 // authentication with Store API
-const auth = require('./../lib/Auth.js')
+const auth = require('./../lib/Auth')
 // AWS SDK API abstraction
-const Aws = require('./../lib/Aws.js')
+const Aws = require('./../lib/Aws')
 // Kraken.io API abstraction
-const Kraken = require('./../lib/Kraken.js')
+const Kraken = require('./../lib/Kraken')
+// download image from Kraken temporary CDN
+const download = require('./../lib/Download')
 
 // NodeJS filesystem module
 const fs = require('fs')
@@ -24,7 +26,7 @@ const multerS3 = require('multer-s3')
 // body parsing middleware
 const bodyParser = require('body-parser')
 
-// Redis to store buckets
+// Redis to store buckets and Kraken async requests IDs
 const redis = require('redis')
 
 // read config file
@@ -35,6 +37,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
   } else {
     const {
       port,
+      hostname,
       baseUri,
       adminBaseUri,
       doSpace,
@@ -104,7 +107,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // new database client
     const client = redis.createClient()
     // Redis key pattern
-    const Key = (storeId) => 'stg:' + storeId
+    const Key = (key, tmp = false) => `stg${(tmp ? ':tmp' : '')}:${key}`
 
     const middlewares = [
       (req, res, next) => {
@@ -180,7 +183,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     const apiPath = '/:store' + baseUri
     const urls = {
       upload: apiPath + 'upload.json',
-      s3: apiPath + 's3/:method.json'
+      s3: apiPath + 's3/:method.json',
+      krakenCallback: apiPath + 'kraken/callback.json'
     }
     // API middlewares
     app.use(apiPath, ...middlewares)
@@ -294,8 +298,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                 setTimeout(() => {
                   // image resize/optimization with Kraken.io
+                  let callbackPath = urls.krakenCallback
+                  for (const paramKey in req.params) {
+                    if (req.params[paramKey]) {
+                      callbackPath = callbackPath.replace(`:${paramKey}`, req.params[paramKey])
+                    }
+                  }
                   kraken(
-                    null,
+                    `${(hostname || 'https://apx-storage.e-com.plus')}${callbackPath}`,
                     lastOptimizedUri || uri,
                     webp ? false : size,
                     webp,
@@ -311,31 +321,37 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     (err, data) => {
                       if (!err && data) {
                         return new Promise(resolve => {
-                          const { url, imageBody } = data
+                          const { id, url, imageBody } = data
                           if (url && !webp) {
                             lastOptimizedUri = url
                           }
-                          if (imageBody) {
-                            // PUT new image on S3 bucket
-                            return runMethod('putObject', {
+
+                          if (imageBody || id) {
+                            const s3Options = {
                               Bucket: bucket,
                               ACL: 'public-read',
-                              Body: imageBody,
                               ContentType: contentType,
                               CacheControl: cacheControl,
                               Key: newKey
-                            })
-                              .then(resolve)
-                              .catch((err) => {
-                                logger.error(err)
-                                resolve(data)
-                              })
+                            }
+                            if (imageBody) {
+                              // PUT new image on S3 bucket
+                              return runMethod('putObject', { ...s3Options, Body: imageBody })
+                                .then(resolve)
+                                .catch((err) => {
+                                  logger.error(err)
+                                  resolve(data)
+                                })
+                            }
+                            // async handle with callback URL
+                            client.setex(Key(id, true), 600, JSON.stringify(s3Options))
+                            return resolve(true)
                           }
-                          resolve(data)
+                          resolve(false)
                         })
 
                           .then(payload => {
-                            if (payload) {
+                            if (payload !== false) {
                               // add to response pictures
                               picture[label] = { url: mountUri(newKey), size }
                             }
@@ -372,6 +388,34 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           }
         }
       })
+    })
+
+    app.use(urls.krakenCallback, (req, res) => {
+      if (req.body) {
+        const url = req.body.kraked_url
+        if (url) {
+          download(url, (err, imageBody) => {
+            if (!err) {
+              // get s3 options set on redis by Kreken request id
+              const redisKey = Key(req.body.id, true)
+              client.get(redisKey, (err, val) => {
+                if (!err) {
+                  // PUT new image on S3 bucket
+                  runMethod('putObject', { ...JSON.parse(val), Body: imageBody })
+                    .then(() => client.del(redisKey))
+                    .catch(logger.error)
+                } else {
+                  logger.error(err)
+                }
+              })
+            }
+          })
+        } else {
+          // TODO: treat Kraken possible errors here
+          logger.log(req.body)
+        }
+      }
+      res.send({})
     })
 
     app.post(urls.s3, (req, res) => {
