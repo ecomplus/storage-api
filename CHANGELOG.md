@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/ecomclub/storage-api/compare/v1.0.3...v1.1.0) (2020-02-20)
+
+
+### Features
+
+* **lib:** add download image handler, get image from kraken if wait opt ([31c64df](https://github.com/ecomclub/storage-api/commit/31c64df67ae78c9f537870b0dc162f94d01fa485))
+
+
+### Bug Fixes
+
+* **kraken:** making s3 integration optional ([95e2e70](https://github.com/ecomclub/storage-api/commit/95e2e7005364d6596ef5d0591e2b17f9433f5fd0))
+* **web:** setup kraken without s3 (don't work for do spaces) ([4eeb045](https://github.com/ecomclub/storage-api/commit/4eeb04585cab0b97ef657ddd4ea5c940c363db6a))
+
 ### [1.0.3](https://github.com/ecomclub/storage-api/compare/v1.0.2...v1.0.3) (2020-02-20)
 
 
