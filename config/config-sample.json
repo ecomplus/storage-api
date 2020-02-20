@@ -8,7 +8,8 @@
     "accessKeyId": "abcdefgh",
     "secretAccessKey": "1234567890"
   },
-  "krakenAuth": {
+  "cloudinaryAuth": {
+    "cloudName": "ecomplus",
     "apiKey": "abcdefgh",
     "apiSecret": "1234567890"
   }
