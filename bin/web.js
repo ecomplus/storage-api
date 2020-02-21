@@ -294,7 +294,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   // image resize/optimization with Cloudinary
                   const originUrl = picture[label]
                     ? picture[label].url
-                    : Object.keys(picture).reduce((smaller, current) => {
+                    : Object.keys(picture).reduce((smaller, label) => {
+                      const current = picture[label]
                       if (!(current.size < size)) {
                         if (!smaller.size || smaller.size > current.size) {
                           return current
