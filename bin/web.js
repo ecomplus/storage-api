@@ -48,8 +48,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     const pictureOptims = (pictureSizes || [700, 350]).reduce((optims, size, i) => {
       const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
       optims.push(
-        { size, label, webp: true },
-        { size, label, webp: false }
+        { size, label, webp: false },
+        { size, label, webp: true }
       )
       return optims
     }, [])
@@ -293,7 +293,16 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                 setTimeout(() => {
                   // image resize/optimization with Cloudinary
-                  cloudinary(uri, size, webp, (err, data) => {
+                  let fixSize, originUrl
+                  if (picture[label] && webp) {
+                    fixSize = false
+                    originUrl = picture[label].url
+                  } else {
+                    fixSize = true
+                    originUrl = uri
+                  }
+
+                  cloudinary(originUrl, fixSize && size, webp, (err, data) => {
                     if (!err && data) {
                       const { id, format, url, bytes, imageBody } = data
 
