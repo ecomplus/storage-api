@@ -267,6 +267,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           const picture = {
             zoom: { url: uri }
           }
+          const pictureBytes = {}
           // resize/optimize image
           let i = -1
 
@@ -292,24 +293,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                 setTimeout(() => {
                   // image resize/optimization with Cloudinary
-                  const originUrl = picture[label]
-                    ? picture[label].url
-                    : Object.keys(picture).reduce((smaller, label) => {
-                      const current = picture[label]
-                      if (!(current.size < size)) {
-                        if (!smaller.size || smaller.size > current.size) {
-                          return current
-                        }
-                      }
-                      return smaller
-                    }, {}).url
-
-                  cloudinary(originUrl, picture[label] ? false : size, webp, (err, data) => {
+                  cloudinary(uri, size, webp, (err, data) => {
                     if (!err && data) {
-                      return new Promise(resolve => {
-                        const { id, format, url, imageBody } = data
-                        let contentType
+                      const { id, format, url, bytes, imageBody } = data
 
+                      return new Promise(resolve => {
+                        let contentType
                         if (webp) {
                           // fix filepath extension and content type header
                           if (format) {
@@ -352,9 +341,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       })
 
                         .then(url => {
-                          if (url && !picture[label]) {
+                          if (url && (!picture[label] || pictureBytes[label] > bytes)) {
                             // add to response pictures
                             picture[label] = { url, size }
+                            pictureBytes[label] = bytes
                           }
                           callback()
                         })
