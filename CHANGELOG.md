@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.3](https://github.com/ecomclub/storage-api/compare/v2.0.2...v2.0.3) (2020-02-21)
+
+
+### Bug Fixes
+
+* **cloudinary:** hardset webp format when compression enabled ([01db968](https://github.com/ecomclub/storage-api/commit/01db96887c3a45223312b3ed8952a6ad326f2592))
+
 ### [2.0.2](https://github.com/ecomclub/storage-api/compare/v2.0.1...v2.0.2) (2020-02-21)
 
 
