@@ -301,7 +301,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                         }
                       }
                       return smaller
-                    }, {})
+                    }, {}).url
 
                   cloudinary(originUrl, picture[label] ? false : size, webp, (err, data) => {
                     if (!err && data) {
