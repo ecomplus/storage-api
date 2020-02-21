@@ -326,7 +326,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                           if (imageBody) {
                             // PUT new image on S3 bucket
                             return runMethod('putObject', { ...s3Options, Body: imageBody })
-                              .then(resolve)
+                              .then(() => resolve(mountUri(newKey)))
                               .catch((err) => {
                                 logger.error(err)
                                 resolve(url)
