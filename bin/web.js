@@ -292,7 +292,17 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                 setTimeout(() => {
                   // image resize/optimization with Cloudinary
-                  const originUrl = picture[label] ? picture[label].url : uri
+                  const originUrl = picture[label]
+                    ? picture[label].url
+                    : Object.keys(picture).reduce((smaller, current) => {
+                      if (!(current.size < size)) {
+                        if (!smaller.size || smaller.size > current.size) {
+                          return current
+                        }
+                      }
+                      return smaller
+                    }, {})
+
                   cloudinary(originUrl, picture[label] ? false : size, webp, (err, data) => {
                     if (!err && data) {
                       return new Promise(resolve => {
