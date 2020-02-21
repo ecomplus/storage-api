@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [2.0.4](https://github.com/ecomclub/storage-api/compare/v2.0.3...v2.0.4) (2020-02-21)
+
+
+### Bug Fixes
+
+* **cloudinary:** destroy with delay after upload to save storage quota ([851ab45](https://github.com/ecomclub/storage-api/commit/851ab45238c10d2264e1dd3d7845c79ffc8b30b0))
+* **cloudinary:** for webp, set quality 80 to ensure lossy enabled ([81a3eac](https://github.com/ecomclub/storage-api/commit/81a3eacb76c6d2201fd8add7e55bf8405ea493fb))
+* **upload:** fix getting url prop from smaller picture obj ([3731bce](https://github.com/ecomclub/storage-api/commit/3731bce1374f9df0c7d5395367047cea81901e73))
+* **upload:** fix working with picture object to get smaller one ([4887fe8](https://github.com/ecomclub/storage-api/commit/4887fe86b8506f4e888fc891eafdb4f05cbf78e9))
+* **upload:** start manipulation always with original, check lower bytes ([e39e7ef](https://github.com/ecomclub/storage-api/commit/e39e7efa36889f7d605d15c0e24a0768fb157276))
+
 ### [2.0.3](https://github.com/ecomclub/storage-api/compare/v2.0.2...v2.0.3) (2020-02-21)
 
 
