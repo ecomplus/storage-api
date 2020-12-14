@@ -210,7 +210,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       const { s3, bucket, host } = spaces[0]
       logger.log(`${storeId} Uploading...`)
       // unique object key
-      let key = ''
+      let key = '@v3/'
       let filename, mimetype
       // logger.log('upload')
       const cacheControl = 'public, max-age=31536000'
@@ -235,7 +235,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             }
             // keep filename
             filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
-            key += 'v3-' + Date.now().toString() + '-' + filename
+            key += `${Date.now()}-${filename}`
             mimetype = file.mimetype
             cb(null, `${storeId}/${key}`)
           }
