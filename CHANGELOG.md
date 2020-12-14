@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.1](https://github.com/ecomplus/storage-api/compare/v3.0.0...v3.0.1) (2020-12-14)
+
+
+### Bug Fixes
+
+* **aws-client:** must pass s3 client to nested methods (changed 'this') ([1b7748d](https://github.com/ecomplus/storage-api/commit/1b7748d2b4b026770601f6bc6a37feee3ede756a))
+
 ## [3.0.0](https://github.com/ecomplus/storage-api/compare/v2.0.4...v3.0.0) (2020-12-14)
 
 
