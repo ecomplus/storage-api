@@ -81,11 +81,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       const run = ({ bucket, runMethod }) => {
         // force current Space bucket
         params.Bucket = bucket
-        runMethod(method, params)
+        return runMethod(method, params)
       }
       for (let i = 1; i < spaces.length; i++) {
         const space = spaces[i]
-        run(spaces[i]).catch(err => {
+        run(space).catch(err => {
           err.locationConstraint = space.locationConstraint
           err.awsEndpoint = space.awsEndpoint
           err.bucket = space.bucket
