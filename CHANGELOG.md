@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.3](https://github.com/ecomplus/storage-api/compare/v3.0.2...v3.0.3) (2020-12-14)
+
+
+### Bug Fixes
+
+* **web:** fix getting promise from 'runMethod' ([296e541](https://github.com/ecomplus/storage-api/commit/296e5419efaa90b272fc8e3004ba83c0f568caad))
+
 ### [3.0.2](https://github.com/ecomplus/storage-api/compare/v3.0.1...v3.0.2) (2020-12-14)
 
 
