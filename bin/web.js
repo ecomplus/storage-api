@@ -39,7 +39,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       port,
       // hostname,
       baseUri,
-      adminBaseUri,
       doSpace,
       cloudinaryAuth,
       pictureSizes
@@ -55,18 +54,36 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     }, [])
 
     // S3 endpoint to DigitalOcean Spaces
-    const locationConstraint = doSpace.datacenter
-    const awsEndpoint = locationConstraint + '.digitaloceanspaces.com'
-    const awsConfig = {
-      awsEndpoint,
-      locationConstraint,
-      ...doSpace
+    const spaces = doSpace.datacenters.map(locationConstraint => {
+      const awsEndpoint = `${locationConstraint}.digitaloceanspaces.com`
+      const client = new Aws({
+        awsEndpoint,
+        locationConstraint,
+        ...doSpace
+      })
+      client.locationConstraint = locationConstraint
+      client.awsEndpoint = awsEndpoint
+      client.bucket = `${doSpace.name}-${locationConstraint}`
+      client.host = `${client.bucket}.${locationConstraint}.cdn.digitaloceanspaces.com`
+      return client
+    })
+
+    // run S3 method with all Spaces
+    const runMethod = (method, params, storeId) => {
+      if (storeId > 100) {
+        ;['Key', 'Prefix'].forEach(param => {
+          const val = params[param]
+          if (typeof val === 'string' && val && /^[\d]{3,}\//.test(val)) {
+            params[param] = `${storeId}/${val}`
+          }
+        })
+      }
+      const run = ({ runMethod }) => runMethod(method, params)
+      for (let i = 1; i < spaces.length; i++) {
+        run(spaces[i]).catch(logger.error)
+      }
+      return run(spaces[0])
     }
-    const {
-      s3,
-      createBucket,
-      runMethod
-    } = Aws(awsConfig)
 
     // setup Cloudinary client
     const cloudinary = Cloudinary(cloudinaryAuth)
@@ -105,9 +122,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     app.use(bodyParser.json())
 
     // new database client
-    const client = redis.createClient()
+    const redisClient = redis.createClient()
     // Redis key pattern
-    const Key = (key, tmp = false) => `stg${(tmp ? ':tmp' : '')}:${key}`
+    const genRedisKey = (key, tmp = false) => `stg${(tmp ? ':tmp' : '')}:${key}`
 
     const middlewares = [
       (req, res, next) => {
@@ -119,7 +136,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               if (authRes === true) {
                 // authenticated
                 // continue
-                req.store = storeId
+                req.storeId = storeId
                 next()
               } else {
                 // unauthorized
@@ -152,30 +169,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           const devMsg = 'Nonexistent or invalid Store ID'
           sendError(res, 403, 101, devMsg)
         }
-      },
-
-      (req, res, next) => {
-        // get bucket name from database
-        client.get(Key(req.store), (err, val) => {
-          if (!err) {
-            if (val) {
-              req.bucket = val
-              next()
-            } else {
-              // not found
-              const devMsg = 'No storage bucket found for this store ID'
-              const usrMsg = {
-                en_us: 'There is no file database configured for this store',
-                pt_br: 'Não há banco de arquivos configurado para esta loja'
-              }
-              sendError(res, 404, 122, devMsg, usrMsg)
-            }
-          } else {
-            // database error
-            logger.error(err)
-            sendError(res, 500, 121)
-          }
-        })
       }
     ]
 
@@ -204,18 +197,20 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     app.get(apiPath, (req, res) => {
       // GET bucket name
-      const bucket = req.bucket
+      const { bucket, host } = spaces[0]
       res.json({
         bucket,
-        host: bucket + '.' + awsEndpoint
+        host,
+        baseUrl: `https://${host}/${req.storeId}/`
       })
     })
 
     app.post(urls.upload, (req, res) => {
-      const bucket = req.bucket
-      logger.log(`${bucket} Uploading...`)
+      const { storeId } = req
+      const { s3, bucket, host } = spaces[0]
+      logger.log(`${storeId} Uploading...`)
       // unique object key
-      let key = '@'
+      let key = ''
       let filename, mimetype
       // logger.log('upload')
       const cacheControl = 'public, max-age=31536000'
@@ -240,9 +235,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             }
             // keep filename
             filename = file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
-            key += 'v2-' + Date.now().toString() + '-' + filename
+            key += 'v3-' + Date.now().toString() + '-' + filename
             mimetype = file.mimetype
-            cb(null, key)
+            cb(null, `${storeId}/${key}`)
           }
         }),
         limits: {
@@ -252,7 +247,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       }).array('file', 1)
 
       upload(req, res, (err) => {
-        logger.log(`${bucket} ${key} Uploaded to S3`)
+        logger.log(`${storeId} ${key} Uploaded to ${bucket}`)
         if (err) {
           // respond with error
           const usrMsg = {
@@ -262,7 +257,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           sendError(res, 400, 3001, err.message, usrMsg)
         } else {
           // uploaded
-          const mountUri = key => `https://${bucket}.${awsEndpoint}/${key}`
+          const mountUri = key => `https://${host}/${storeId}/${key}`
           const uri = mountUri(key)
           const picture = {
             zoom: { url: uri }
@@ -331,7 +326,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                             ACL: 'public-read',
                             ContentType: contentType,
                             CacheControl: cacheControl,
-                            Key: newKey
+                            Key: `${storeId}/${newKey}`
                           }
                           if (imageBody) {
                             // PUT new image on S3 bucket
@@ -343,7 +338,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                               })
                           }
                           // async handle with callback URL
-                          client.setex(Key(id, true), 600, JSON.stringify(s3Options))
+                          redisClient.setex(genRedisKey(id, true), 600, JSON.stringify(s3Options))
                           return resolve(mountUri(newKey))
                         }
                         resolve(url)
@@ -396,12 +391,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           download(url, (err, imageBody) => {
             if (!err) {
               // get s3 options set on redis by manipulation request id
-              const redisKey = Key(id, true)
-              client.get(redisKey, (err, val) => {
+              const redisKey = genRedisKey(id, true)
+              redisClient.get(redisKey, (err, val) => {
                 if (!err) {
                   // PUT new image on S3 bucket
                   runMethod('putObject', { ...JSON.parse(val), Body: imageBody })
-                    .then(() => client.del(redisKey))
+                    .then(() => redisClient.del(redisKey))
                     .catch(logger.error)
                 } else {
                   logger.error(err)
@@ -438,7 +433,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         // forbidden
         const devMsg = 'You are able to call only object methods'
         sendError(res, 403, 3011, devMsg)
-      } else if (typeof s3[method] !== 'function') {
+      } else if (typeof spaces[0].s3[method] !== 'function') {
         // not found
         const devMsg = 'Invalid method name, not found' +
           '\nAvailable AWS S3 methods:' +
@@ -458,45 +453,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             // pass AWS SDK error message
             sendError(res, 400, 3019, err.message)
           })
-      }
-    })
-
-    app.get(adminBaseUri + 'setup/:store/', (req, res) => {
-      // check store ID
-      const storeId = parseInt(req.params.store, 10)
-      if (storeId >= 100) {
-        // check request origin IP
-        const ip = req.get('X-Real-IP') || req.connection.remoteAddress
-        if (ip) {
-          switch (ip) {
-            case '127.0.0.1':
-            case '::1':
-            case '::ffff:127.0.0.1':
-              // localhost
-              // setup storage for specific store
-              createBucket(locationConstraint)
-                .then(({ bucket }) => {
-                  // save bucket name on databse
-                  client.set(Key(storeId), bucket)
-                  res.status(201).end()
-                })
-                .catch((err) => {
-                  logger.error(err)
-                  res.status(500).end(err.message)
-                })
-              break
-
-            default:
-              // remote
-              // unauthorized
-              res.status(401).end('Unauthorized client IP: ' + ip)
-          }
-        } else {
-          // no reverse proxy ?
-          res.status(407).end()
-        }
-      } else {
-        res.status(406).end()
       }
     })
 
