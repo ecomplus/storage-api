@@ -89,6 +89,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           err.locationConstraint = space.locationConstraint
           err.awsEndpoint = space.awsEndpoint
           err.bucket = space.bucket
+          err.params = params
           logger.error(err)
         })
       }
