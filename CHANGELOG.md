@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.0.0](https://github.com/ecomplus/storage-api/compare/v2.0.4...v3.0.0) (2020-12-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **web:** setup endoint removed (no more creating buckets), keys renamed
+* **config-sample:** doSpace config object edited
+
+### Bug Fixes
+
+* **web:** storage object key must keep @ prefix ([3c4bc70](https://github.com/ecomplus/storage-api/commit/3c4bc700959a375ded1aead2f5c67a50d8916881))
+
+
+* **config-sample:** refactors for multiple datacenters ([b75f238](https://github.com/ecomplus/storage-api/commit/b75f2380a5d63b12fa07176354f67afc708526d2))
+* **web:** refactor all to handle multiple datacenters and fixed buckets ([5cc4d16](https://github.com/ecomplus/storage-api/commit/5cc4d160d349e718c0d23f624284161e780fcd99))
+
 ### [2.0.4](https://github.com/ecomclub/storage-api/compare/v2.0.3...v2.0.4) (2020-02-21)
 
 
