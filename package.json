@@ -1,6 +1,6 @@
 {
   "name": "ecomplus-storage",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "E-Com Plus Storage API Node.js Express App",
   "main": "main.js",
   "scripts": {

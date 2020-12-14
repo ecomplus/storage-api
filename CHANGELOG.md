@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.2](https://github.com/ecomplus/storage-api/compare/v3.0.1...v3.0.2) (2020-12-14)
+
+
+### Bug Fixes
+
+* **web:** force each space bucket on run method for all ([e4e56e8](https://github.com/ecomplus/storage-api/commit/e4e56e82bfdf3b5164b11ef7ae70d60723706afa))
+
 ### [3.0.1](https://github.com/ecomplus/storage-api/compare/v3.0.0...v3.0.1) (2020-12-14)
 
 
