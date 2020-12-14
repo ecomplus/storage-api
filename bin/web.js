@@ -78,9 +78,19 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           }
         })
       }
-      const run = ({ runMethod }) => runMethod(method, params)
+      const run = ({ bucket, runMethod }) => {
+        // force current Space bucket
+        params.Bucket = bucket
+        runMethod(method, params)
+      }
       for (let i = 1; i < spaces.length; i++) {
-        run(spaces[i]).catch(logger.error)
+        const space = spaces[i]
+        run(spaces[i]).catch(err => {
+          err.locationConstraint = space.locationConstraint
+          err.awsEndpoint = space.awsEndpoint
+          err.bucket = space.bucket
+          logger.error(err)
+        })
       }
       return run(spaces[0])
     }
@@ -322,7 +332,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                         if (imageBody || id) {
                           const s3Options = {
-                            Bucket: bucket,
                             ACL: 'public-read',
                             ContentType: contentType,
                             CacheControl: cacheControl,
@@ -441,9 +450,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         sendError(res, 404, 3012, devMsg)
       } else {
         // valid method
-        // force store bucket
-        params.Bucket = req.bucket
-
         runMethod(method, params)
           .then((data) => {
             // pass same data returned by AWS API
