@@ -80,8 +80,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       }
       const run = ({ bucket, runMethod }) => {
         // force current Space bucket
-        params.Bucket = bucket
-        return runMethod(method, params)
+        return runMethod(method, {
+          ...params,
+          Bucket: bucket
+        })
       }
       for (let i = 1; i < spaces.length; i++) {
         const space = spaces[i]
