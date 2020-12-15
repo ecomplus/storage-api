@@ -453,7 +453,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         sendError(res, 404, 3012, devMsg)
       } else {
         // valid method
-        runMethod(method, params)
+        runMethod(method, params, req.storeId)
           .then((data) => {
             // pass same data returned by AWS API
             res.json(data)
