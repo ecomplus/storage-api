@@ -73,7 +73,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       if (storeId > 100) {
         ;['Key', 'Prefix'].forEach(param => {
           const val = params[param]
-          if (typeof val === 'string' && val && /^[\d]{3,}\//.test(val)) {
+          if (typeof val === 'string' && val && !/^\d{3,}\//.test(val)) {
             params[param] = `${storeId}/${val}`
           }
         })
@@ -85,15 +85,17 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           Bucket: bucket
         })
       }
-      for (let i = 1; i < spaces.length; i++) {
-        const space = spaces[i]
-        run(space).catch(err => {
-          err.locationConstraint = space.locationConstraint
-          err.awsEndpoint = space.awsEndpoint
-          err.bucket = space.bucket
-          err.params = params
-          logger.error(err)
-        })
+      if (method !== 'listObjects') {
+        for (let i = 1; i < spaces.length; i++) {
+          const space = spaces[i]
+          run(space).catch(err => {
+            err.locationConstraint = space.locationConstraint
+            err.awsEndpoint = space.awsEndpoint
+            err.bucket = space.bucket
+            err.params = params
+            logger.error(err)
+          })
+        }
       }
       return run(spaces[0])
     }
