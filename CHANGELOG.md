@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.0.4](https://github.com/ecomplus/storage-api/compare/v3.0.3...v3.0.4) (2020-12-15)
+
+
+### Bug Fixes
+
+* **web:** ensure method bucket is preserved on params (object changed by reference) ([ea57c79](https://github.com/ecomplus/storage-api/commit/ea57c79bb701c27b0ce1910622820ab8734bb894))
+* **web:** ensure passing 'storeId' on s3 run method from exposed api ([390e394](https://github.com/ecomplus/storage-api/commit/390e394d015929e7a6a8282610d9e9a84ae2ec70))
+
 ### [3.0.3](https://github.com/ecomplus/storage-api/compare/v3.0.2...v3.0.3) (2020-12-14)
 
 
