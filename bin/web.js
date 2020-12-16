@@ -41,6 +41,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       baseUri,
       doSpace,
       cloudinaryAuth,
+      cdnHost,
       pictureSizes
     } = JSON.parse(data)
 
@@ -272,8 +273,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           sendError(res, 400, 3001, err.message, usrMsg)
         } else {
           // uploaded
-          const mountUri = key => `https://${host}/${storeId}/${key}`
-          const uri = mountUri(key)
+          const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${storeId}/${key}`
+          const uri = mountUri(key, host)
           const picture = {
             zoom: { url: uri }
           }

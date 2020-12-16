@@ -15,5 +15,6 @@
     "cloudName": "ecomplus",
     "apiKey": "abcdefgh",
     "apiSecret": "1234567890"
-  }
+  },
+  "cdnHost": "ecoms1.com"
 }
