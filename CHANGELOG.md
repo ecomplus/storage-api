@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [3.1.0](https://github.com/ecomplus/storage-api/compare/v3.0.4...v3.1.0) (2020-12-16)
+
+
+### Features
+
+* **cdn-host:** optional additional cdn host to optimized images ([5131613](https://github.com/ecomplus/storage-api/commit/513161350c73d6c5b94c16a3f72f070cfb2db8f0))
+
+
+### Bug Fixes
+
+* **web:** fix adding store id prefix to s3 key params ([ff4d63a](https://github.com/ecomplus/storage-api/commit/ff4d63a2000204a37d46aa3890d9207a4877c420))
+
 ### [3.0.4](https://github.com/ecomplus/storage-api/compare/v3.0.3...v3.0.4) (2020-12-15)
 
 
