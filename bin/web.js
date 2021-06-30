@@ -377,6 +377,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   respond()
                 }, 100)
               }
+            } else if (uri && typeof err.message === 'string' && err.message.indexOf('cloud_name') > -1) {
+              // image uploaded but not transformed
+              respond()
+              logger.error(err)
             } else {
               // respond with error
               const usrMsg = {
