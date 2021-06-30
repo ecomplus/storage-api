@@ -11,20 +11,20 @@
   "license": "GPL-3.0",
   "private": true,
   "dependencies": {
-    "aws-sdk": "^2.809.0",
+    "aws-sdk": "^2.936.0",
     "body-parser": "^1.19.0",
-    "cloudinary": "^1.23.0",
+    "cloudinary": "^1.26.1",
     "express": "^4.17.1",
     "multer": "^1.4.2",
     "multer-s3": "^2.9.0",
-    "redis": "^3.0.2"
+    "redis": "^3.1.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^11.0.0",
     "@commitlint/config-conventional": "^11.0.0",
-    "husky": "^4.3.6",
+    "husky": "^4.3.8",
     "standard": "^16.0.3",
-    "standard-version": "^9.0.0"
+    "standard-version": "^9.3.0"
   },
   "husky": {
     "hooks": {
