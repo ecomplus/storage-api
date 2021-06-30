@@ -267,8 +267,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
         if (err) {
           // respond with error
           const usrMsg = {
-            en_us: 'This file can not be uploaded',
-            pt_br: 'Este arquivo não pode ser carregado'
+            en_us: 'This file cannot be uploaded, make sure it is a valid image with up to 2mb ',
+            pt_br: 'O arquivo não pôde ser carregado, verifique se é uma imagem válida com até 2mb'
           }
           sendError(res, 400, 3001, err.message, usrMsg)
         } else {
