@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.1.2](https://github.com/ecomplus/storage-api/compare/v3.1.1...v3.1.2) (2021-06-30)
+
+
+### Bug Fixes
+
+* **upload:** may respond even when no all optimizations done but uploaded ([1c8d070](https://github.com/ecomplus/storage-api/commit/1c8d070839878325b5c458ccb674a8b5ef57ec9a))
+
 ### [3.1.1](https://github.com/ecomplus/storage-api/compare/v3.1.0...v3.1.1) (2021-06-30)
 
 
