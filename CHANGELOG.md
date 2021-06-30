@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.1.1](https://github.com/ecomplus/storage-api/compare/v3.1.0...v3.1.1) (2021-06-30)
+
+
+### Bug Fixes
+
+* **error-response:** better telling upload error with max file size ([8effd1f](https://github.com/ecomplus/storage-api/commit/8effd1ffb77ab991a6fd5d49fc77c3168fb60bed))
+
 ## [3.1.0](https://github.com/ecomplus/storage-api/compare/v3.0.4...v3.1.0) (2020-12-16)
 
 
