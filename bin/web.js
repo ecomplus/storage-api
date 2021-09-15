@@ -313,64 +313,76 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     originUrl = uri
                   }
 
-                  cloudinary(originUrl, fixSize && size, webp, (err, data) => {
-                    if (!err && data) {
-                      const { id, format, url, bytes, imageBody } = data
+                  const transformImg = (isRetry = false) => {
+                    cloudinary(originUrl, fixSize && size, webp, (err, data) => {
+                      if (!err && data) {
+                        const { id, format, url, bytes, imageBody } = data
 
-                      return new Promise(resolve => {
-                        let contentType
-                        if (webp) {
-                          // fix filepath extension and content type header
-                          if (format) {
-                            if (!newKey.endsWith(format)) {
-                              // converted to best optim format
-                              newKey += `.${format}`
+                        return new Promise(resolve => {
+                          let contentType
+                          if (webp) {
+                            // fix filepath extension and content type header
+                            if (format) {
+                              if (!newKey.endsWith(format)) {
+                                // converted to best optim format
+                                newKey += `.${format}`
+                              }
+                              contentType = format === 'jpg' ? 'image/jpeg' : `image/${format}`
+                            } else {
+                              // converted to WebP
+                              newKey += '.webp'
+                              contentType = 'image/webp'
                             }
-                            contentType = format === 'jpg' ? 'image/jpeg' : `image/${format}`
                           } else {
-                            // converted to WebP
-                            newKey += '.webp'
-                            contentType = 'image/webp'
+                            contentType = mimetype
                           }
-                        } else {
-                          contentType = mimetype
-                        }
 
-                        if (imageBody || id) {
-                          const s3Options = {
-                            ACL: 'public-read',
-                            ContentType: contentType,
-                            CacheControl: cacheControl,
-                            Key: `${storeId}/${newKey}`
+                          if (imageBody || id) {
+                            const s3Options = {
+                              ACL: 'public-read',
+                              ContentType: contentType,
+                              CacheControl: cacheControl,
+                              Key: `${storeId}/${newKey}`
+                            }
+                            if (imageBody) {
+                              // PUT new image on S3 bucket
+                              return runMethod('putObject', { ...s3Options, Body: imageBody })
+                                .then(() => resolve(mountUri(newKey)))
+                                .catch((err) => {
+                                  logger.error(err)
+                                  resolve(url)
+                                })
+                            }
+                            // async handle with callback URL
+                            redisClient.setex(genRedisKey(id, true), 600, JSON.stringify(s3Options))
+                            return resolve(mountUri(newKey))
                           }
-                          if (imageBody) {
-                            // PUT new image on S3 bucket
-                            return runMethod('putObject', { ...s3Options, Body: imageBody })
-                              .then(() => resolve(mountUri(newKey)))
-                              .catch((err) => {
-                                logger.error(err)
-                                resolve(url)
-                              })
-                          }
-                          // async handle with callback URL
-                          redisClient.setex(genRedisKey(id, true), 600, JSON.stringify(s3Options))
-                          return resolve(mountUri(newKey))
-                        }
-                        resolve(url)
-                      })
-
-                        .then(url => {
-                          if (url && (!picture[label] || pictureBytes[label] > bytes)) {
-                            // add to response pictures
-                            picture[label] = { url, size }
-                            pictureBytes[label] = bytes
-                          }
-                          callback()
+                          resolve(url)
                         })
-                    }
-                    callback(err)
-                  })
-                }, 200)
+
+                          .then(url => {
+                            if (url && (!picture[label] || pictureBytes[label] > bytes)) {
+                              // add to response pictures
+                              picture[label] = { url, size }
+                              pictureBytes[label] = bytes
+                            }
+                            callback()
+                          })
+                      }
+
+                      if (
+                        err &&
+                        !isRetry &&
+                        typeof err.message === 'string' &&
+                        (err.message.indexOf('504 Gateway Timeout') > -1 || err.message.indexOf('503 Service Unavailable') > -1)
+                      ) {
+                        return setTimeout(() => transformImg(true), 400)
+                      }
+                      callback(err)
+                    })
+                  }
+                  transformImg()
+                }, 300)
               } else {
                 setTimeout(() => {
                   // all done
