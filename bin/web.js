@@ -376,7 +376,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                         typeof err.message === 'string' &&
                         (err.message.indexOf('504 Gateway Timeout') > -1 || err.message.indexOf('503 Service Unavailable') > -1)
                       ) {
-                        return setTimeout(() => transformImg(true), 400)
+                        return setTimeout(() => transformImg(true), 1000)
                       }
                       callback(err)
                     })
