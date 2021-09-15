@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.1.4](https://github.com/ecomplus/storage-api/compare/v3.1.3...v3.1.4) (2021-09-15)
+
+
+### Bug Fixes
+
+* **upload:** delay & retry image transformation when getting 504 / 503 from cloudinary -> cdn ([ba98e19](https://github.com/ecomplus/storage-api/commit/ba98e19338b8531d06a19e72d4baa84d142e376c))
+
 ### [3.1.3](https://github.com/ecomplus/storage-api/compare/v3.1.2...v3.1.3) (2021-06-30)
 
 
