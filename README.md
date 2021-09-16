@@ -3,7 +3,7 @@
 E-Com Plus Storage API (DO Spaces) Node.js Express App
 
 # Technology stack
-+ [NodeJS](https://nodejs.org/en/) 8.9.x
++ [NodeJS](https://nodejs.org/en/) 14.x
 + [Express 4](http://expressjs.com/) web framework
 
 # Reference
