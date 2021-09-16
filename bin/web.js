@@ -305,7 +305,10 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 setTimeout(() => {
                   // image resize/optimization with Cloudinary
                   let fixSize, originUrl
-                  if (picture[label] && webp) {
+                  if (i === 0 && req.file?.buffer) {
+                    fixSize = !webp
+                    originUrl = req.file.buffer.toString('base64')
+                  } else if (picture[label] && webp) {
                     fixSize = false
                     originUrl = picture[label].url
                   } else {
@@ -382,7 +385,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     })
                   }
                   transformImg()
-                }, i === 0 ? 1000 : 200)
+                }, 200)
               } else {
                 setTimeout(() => {
                   // all done
