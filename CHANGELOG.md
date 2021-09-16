@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.1.6](https://github.com/ecomplus/storage-api/compare/v3.1.5...v3.1.6) (2021-09-16)
+
+
+### Bug Fixes
+
+* **upload:** bigger delay for first transformation (zoom image) ([12d2a36](https://github.com/ecomplus/storage-api/commit/12d2a368f8e5e5f978211ded66592df469afe470))
+
 ### [3.1.5](https://github.com/ecomplus/storage-api/compare/v3.1.4...v3.1.5) (2021-09-15)
 
 
