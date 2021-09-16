@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [3.1.8](https://github.com/ecomplus/storage-api/compare/v3.1.7...v3.1.8) (2021-09-16)
+
+
+### Bug Fixes
+
+* **cloudinary:** upload timeouts in 10s, skip debugging raw base64 ([5820319](https://github.com/ecomplus/storage-api/commit/5820319a471095a9c624a08ec13413f0c32f7dd2))
+* **deps:** remove no more used `multer-s3` ([d9f868f](https://github.com/ecomplus/storage-api/commit/d9f868f48d774b9985e6843ed51f48b00c3d4ab3))
+* **upload:** handle image buffers and send base64 to cloudinary instead of cdn urls ([7dc5f4c](https://github.com/ecomplus/storage-api/commit/7dc5f4cae98d4407f6243def5d648a50739c48ab))
+
 ### [3.1.7](https://github.com/ecomplus/storage-api/compare/v3.1.6...v3.1.7) (2021-09-16)
 
 ### [3.1.6](https://github.com/ecomplus/storage-api/compare/v3.1.5...v3.1.6) (2021-09-16)
