@@ -382,7 +382,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     })
                   }
                   transformImg()
-                }, 300)
+                }, i === 0 ? 1000 : 200)
               } else {
                 setTimeout(() => {
                   // all done
