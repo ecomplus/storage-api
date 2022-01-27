@@ -23,7 +23,7 @@ Edit `config.json` placing correct values for your environment,
 after that, start app with node:
 
 ```bash
-node ./main.js
+  node ./main.js
 ```
 
 # Web server

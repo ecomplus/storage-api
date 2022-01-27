@@ -8,6 +8,8 @@ const auth = require('./../lib/Auth')
 const Aws = require('./../lib/Aws')
 // Cloudinary API abstraction
 const Cloudinary = require('./../lib/Cloudinary')
+// Cloudflare API abstraxtion
+const CloudFlare = require('./../lib/Cloudflare')
 // download image from Kraken temporary CDN
 const download = require('./../lib/Download')
 
@@ -39,6 +41,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       baseUri,
       doSpace,
       cloudinaryAuth,
+      cloudflareAuth,
       cdnHost,
       pictureSizes
     } = JSON.parse(data)
@@ -101,6 +104,9 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     // setup Cloudinary client
     const cloudinary = Cloudinary(cloudinaryAuth)
+
+    // setup Cloudflare client
+    const cloudflare = CloudFlare(cloudflareAuth)
 
     const sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
