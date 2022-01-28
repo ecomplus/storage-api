@@ -241,7 +241,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       let key = '@v3/'
 
       localUpload.single('file')(req, res, (err) => {
-        console.log('Upload single', err)
         if (err) {
           const usrMsg = {
             en_us: 'This file cannot be uploaded, make sure it is a valid image with up to 2mb',
