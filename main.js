@@ -23,13 +23,10 @@ process.on('uncaughtException', (err) => {
     msg += '\n'
   }
 
-  console.log('here', err)
-
-  //! Restore after commit
-  // let fs = require('fs')
-  // fs.appendFile('/var/log/nodejs/_stderr', msg, () => {
-  //   process.exit(1)
-  // })
+  let fs = require('fs')
+  fs.appendFile('/var/log/nodejs/_stderr', msg, () => {
+    process.exit(1)
+  })
 })
 
 // web application
