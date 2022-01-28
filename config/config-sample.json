@@ -16,5 +16,9 @@
     "apiKey": "abcdefgh",
     "apiSecret": "1234567890"
   },
+  "cloudflareAuth": {
+    "apiKey": "your_key",
+    "accountId": "your_account"
+  },
   "cdnHost": "ecoms1.com"
 }
