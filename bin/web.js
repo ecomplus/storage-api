@@ -279,9 +279,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               // zoom uploaded
               const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${storeId}/${key}`
               const uri = mountUri(key)
-              const picture = {
-                zoom: { url: uri }
-              }
+              const picture = { zoom: { url: uri } }
               const pictureBytes = {}
               // resize/optimize image
               let i = -1
@@ -326,6 +324,16 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       }
 
                       const transformImg = (isRetry = false) => {
+                        cloudflare(imageBase64 || originUrl, fixSize && size, webp, (err, data) => {
+                          if (!err && data) {
+                            const { id, variants, filename, imageBody } = data
+                          }
+                        })
+
+
+
+
+
                         cloudinary(imageBase64 || originUrl, fixSize && size, webp, (err, data) => {
                           if (!err && data) {
                             const { id, format, url, bytes, imageBody } = data
