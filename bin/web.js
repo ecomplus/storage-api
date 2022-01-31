@@ -323,13 +323,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
                         cloudflare(imageBase64 || originUrl,  sizeMapping[label], (err, data) => {
                           if (!err && data) {
-                            const { id, url, filename, imageBody } = data
-
+                            const { id, url, imageBody } = data
                             return new Promise(resolve => {
-                              
-                              let contentType
-                              contentType = `image/${filename.includes('.png') ? 'png' : filename.includes('.webp') ? 'webp' : 'jpeg'}`
-                              const fileFormat = `${filename.split('.')[1]}`
+                              // Cloudinary keeps image as webp, so we using webp as default
+                              const contentType = 'image/webp'
+                              const fileFormat = 'webp'
                               if (imageBody || id) {
                                 const s3Options = {
                                   ...baseS3Options,
