@@ -314,7 +314,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     // Transform image updated to cloudflare
                     const transformImg = (isRetry = false) => {
 
-                        cloudflare(imageBase64 || originUrl, 'normal', (err, data) => {
+                        cloudflare(imageBase64 || originUrl, label, (err, data) => {
                           if (!err && data) {
                             const { id, url, filename, imageBody } = data
 
