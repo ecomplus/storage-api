@@ -329,11 +329,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                               
                               let contentType
                               contentType = `image/${filename.includes('.png') ? 'png' : filename.includes('.webp') ? 'webp' : 'jpeg'}`
+                              const fileFormat = `${filename.split('.')[1]}`
                               if (imageBody || id) {
                                 const s3Options = {
                                   ...baseS3Options,
                                   ContentType: contentType,
-                                  Key: `${storeId}/${newKey}`
+                                  Key: `${storeId}/${newKey}.${fileFormat}`
                                 }
                                 if (imageBody) {
                                   transformedImageBody = imageBody
