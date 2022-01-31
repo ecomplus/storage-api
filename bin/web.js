@@ -285,6 +285,13 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               res.json({ bucket, key, uri, picture })
             }
 
+            const sizeMapping = {
+              'normal': 'normal',
+              'big': 'big',
+              'zoom': 'zoom',
+              'small': 'w90'
+            }
+
             const callback = err => {
               if (!err) {
                 // next image size
@@ -314,7 +321,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     // Transform image updated to cloudflare
                     const transformImg = (isRetry = false) => {
 
-                        cloudflare(imageBase64 || originUrl, label, (err, data) => {
+                        cloudflare(imageBase64 || originUrl,  sizeMapping[label], (err, data) => {
                           if (!err && data) {
                             const { id, url, filename, imageBody } = data
 
