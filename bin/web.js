@@ -6,8 +6,8 @@ const logger = require('./../lib/Logger')
 const auth = require('./../lib/Auth')
 // AWS SDK API abstraction
 const Aws = require('./../lib/Aws')
-// Cloudinary API abstraction
-const Cloudinary = require('./../lib/Cloudinary')
+// Cloudflare API abstraxtion
+const CloudFlare = require('./../lib/Cloudflare')
 // download image from Kraken temporary CDN
 const download = require('./../lib/Download')
 
@@ -38,17 +38,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       // hostname,
       baseUri,
       doSpace,
-      cloudinaryAuth,
+      cloudflareAuth,
       cdnHost,
       pictureSizes
     } = JSON.parse(data)
 
     const pictureOptims = (pictureSizes || [700, 350]).reduce((optims, size, i) => {
       const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
-      optims.push(
-        { size, label, webp: false },
-        { size, label, webp: true }
-      )
+      optims.push({ size, label, webp: true })
       return optims
     }, [])
 
@@ -99,8 +96,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
       return run(spaces[0])
     }
 
-    // setup Cloudinary client
-    const cloudinary = Cloudinary(cloudinaryAuth)
+    // setup Cloudflare client
+    const cloudflare = CloudFlare(cloudflareAuth)
 
     const sendError = (res, status, code, devMsg, usrMsg) => {
       if (!devMsg) {
@@ -268,86 +265,64 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             Key: `${storeId}/${key}`,
             Body: req.file.buffer
           })
-            .then(() => {
-              logger.log(`${storeId} ${key} Uploaded to ${bucket}`)
-              // zoom uploaded
-              const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${storeId}/${key}`
-              const uri = mountUri(key)
-              const picture = {
-                zoom: { url: uri }
-              }
-              const pictureBytes = {}
-              // resize/optimize image
-              let i = -1
-              let transformedImageBody = null
+          // S3 Response
+          .then(() => {
+            logger.log(`${storeId} ${key} Uploaded to ${bucket}`)
+            // zoom uploaded
+            const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${storeId}/${key}`
+            const uri = mountUri(key)
+            const picture = { zoom: { url: uri } }
+            const pictureBytes = {}
+            // resize/optimize image
+            let i = -1
+            let transformedImageBody = null
 
-              const respond = () => {
-                logger.log(`${storeId} ${key} ${bucket} All optimizations done`)
-                res.json({
-                  bucket,
-                  key,
-                  // return complete object URL
-                  uri,
-                  picture
-                })
-              }
+            const respond = () => {
+              logger.log(`${storeId} ${key} ${bucket} All optimizations done`)
+              res.json({ bucket, key, uri, picture })
+            }
 
-              const callback = err => {
-                if (!err) {
-                  // next image size
-                  i++
-                  if (i < pictureOptims.length) {
-                    let newKey
-                    const { label, size, webp } = pictureOptims[i]
-                    newKey = `imgs/${label}/${key}`
+            const callback = err => {
+              if (!err) {
+                // next image size
+                i++
+                if (i < pictureOptims.length) {
+                  let newKey
+                  const { label, size, webp } = pictureOptims[i]
+                  newKey = `imgs/${label}/${key}`
 
-                    const imageBuffer = i === 0 ? req.file.buffer : transformedImageBody
-                    const imageBase64 = imageBuffer
-                      ? `data:${mimetype};base64,${imageBuffer.toString('base64')}`
-                      : null
-                    // free memory
-                    transformedImageBody = req.file = null
+                  const imageBuffer = i === 0 ? req.file.buffer : transformedImageBody
+                  const imageBase64 = imageBuffer
+                    ? `data:${mimetype};base64,${imageBuffer.toString('base64')}`
+                    : null
+                  // free memory
+                  transformedImageBody = req.file = null
 
-                    setTimeout(() => {
-                      // image resize/optimization with Cloudinary
-                      let fixSize, originUrl
-                      if (picture[label] && webp) {
-                        fixSize = false
-                        originUrl = picture[label].url
-                      } else {
-                        fixSize = true
-                        originUrl = uri
-                      }
+                  setTimeout(() => {
+                      
+                    // Retrieve url
+                    let originUrl
+                    if (picture[label] && webp) {
+                      originUrl = picture[label].url
+                    } else {
+                      originUrl = uri
+                    }
 
-                      const transformImg = (isRetry = false) => {
-                        cloudinary(imageBase64 || originUrl, fixSize && size, webp, (err, data) => {
+                    // Transform image updated to cloudflare
+                    const transformImg = (isRetry = false) => {
+
+                        cloudflare(imageBase64 || originUrl, label === 'small' ? 'w90' : label, (err, data) => {
                           if (!err && data) {
-                            const { id, format, url, bytes, imageBody } = data
-
+                            const { id, url, imageBody } = data
                             return new Promise(resolve => {
-                              let contentType
-                              if (webp) {
-                                // fix filepath extension and content type header
-                                if (format) {
-                                  if (!newKey.endsWith(format)) {
-                                    // converted to best optim format
-                                    newKey += `.${format}`
-                                  }
-                                  contentType = format === 'jpg' ? 'image/jpeg' : `image/${format}`
-                                } else {
-                                  // converted to WebP
-                                  newKey += '.webp'
-                                  contentType = 'image/webp'
-                                }
-                              } else {
-                                contentType = mimetype
-                              }
-
+                              // Cloudinary keeps image as webp, so we using webp as default
+                              const contentType = 'image/webp'
+                              const fileFormat = 'webp'
                               if (imageBody || id) {
                                 const s3Options = {
                                   ...baseS3Options,
                                   ContentType: contentType,
-                                  Key: `${storeId}/${newKey}`
+                                  Key: `${storeId}/${newKey}.${fileFormat}`
                                 }
                                 if (imageBody) {
                                   transformedImageBody = imageBody
@@ -364,16 +339,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                                 return resolve(mountUri(newKey))
                               }
                               resolve(url)
+                            
+                            }).then(url => {
+                              if (url && (!picture[label] || pictureBytes[label] > bytes)) {
+                                picture[label] = { url, size }
+                                pictureBytes[label] = bytes
+                              }
+                              callback()
                             })
-
-                              .then(url => {
-                                if (url && (!picture[label] || pictureBytes[label] > bytes)) {
-                                  // add to response pictures
-                                  picture[label] = { url, size }
-                                  pictureBytes[label] = bytes
-                                }
-                                callback()
-                              })
                           }
 
                           if (
@@ -384,52 +357,56 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                             if (!isRetry) {
                               return setTimeout(() => transformImg(true), 1000)
                             } else {
-                              // return image without all transformations
                               return respond()
                             }
                           }
                           callback(err)
                         })
-                      }
-                      transformImg()
-                    }, imageBase64 ? 50 : 300)
-                  } else {
-                    setTimeout(() => {
-                      // all done
-                      respond()
-                    }, 50)
-                  }
-                } else if (uri && typeof err.message === 'string' && err.message.indexOf('cloud_name') > -1) {
-                  // image uploaded but not transformed
-                  respond()
-                  logger.error(err)
+
+                    }
+
+                    // Transofrm image
+                    transformImg()
+
+                  }, imageBase64 ? 50 : 300)
                 } else {
-                  // respond with error
-                  const usrMsg = {
-                    en_us: 'Error while handling image, the file may be protected or corrupted',
-                    pt_br: 'Erro ao manipular a imagem, o arquivo pode estar protegido ou corrompido'
-                  }
-                  sendError(res, 415, uri, err.message, usrMsg)
+                  setTimeout(() => {
+                    // all done
+                    respond()
+                  }, 50)
                 }
-              }
 
-              switch (mimetype) {
-                case 'image/jpeg':
-                case 'image/png':
-                  callback()
-                  break
-                default:
-                  respond()
+              } else if (uri && typeof err.message === 'string' && err.message.indexOf('cloud_name') > -1) {
+                // image uploaded but not transformed
+                respond()
+                logger.error(err)
+              } else {
+                // respond with error
+                const usrMsg = {
+                  en_us: 'Error while handling image, the file may be protected or corrupted',
+                  pt_br: 'Erro ao manipular a imagem, o arquivo pode estar protegido ou corrompido'
+                }
+                sendError(res, 415, uri, err.message, usrMsg)
               }
-            })
+            }
 
-            .catch(err => {
-              const usrMsg = {
-                en_us: 'This file cannot be uploaded to CDN',
-                pt_br: 'O arquivo não pôde ser carregado para o CDN'
-              }
-              sendError(res, 400, 3002, err.message, usrMsg)
-            })
+            switch (mimetype) {
+              case 'image/jpeg':
+              case 'image/png':
+                callback()
+                break
+              default:
+                respond()
+            }
+          })
+          // CDN Upload error
+          .catch((err) => {
+            const usrMsg = {
+              en_us: 'This file cannot be uploaded to CDN',
+              pt_br: 'O arquivo não pôde ser carregado para o CDN'
+            }
+            sendError(res, 400, 3002, err.message, usrMsg)
+          })
         }
       })
     })
