@@ -45,10 +45,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     const pictureOptims = (pictureSizes || [700, 350]).reduce((optims, size, i) => {
       const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
-      optims.push(
-        { size, label, webp: false },
-        { size, label, webp: true }
-      )
+      optims.push({ size, label, webp: true })
       return optims
     }, [])
 
