@@ -290,28 +290,17 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   let newKey
                   const { label, size, webp } = pictureOptims[i]
                   newKey = `imgs/${label}/${key}`
+                  const imageFile = req.file
 
-                  const imageBuffer = i === 0 ? req.file.buffer : transformedImageBody
-                  const imageBase64 = imageBuffer
-                    ? `data:${mimetype};base64,${imageBuffer.toString('base64')}`
-                    : null
                   // free memory
                   transformedImageBody = req.file = null
 
                   setTimeout(() => {
                       
-                    // Retrieve url
-                    let originUrl
-                    if (picture[label] && webp) {
-                      originUrl = picture[label].url
-                    } else {
-                      originUrl = uri
-                    }
-
                     // Transform image updated to cloudflare
                     const transformImg = (isRetry = false) => {
 
-                        cloudflare(imageBase64 || originUrl, label === 'small' ? 'w90' : label, (err, data) => {
+                        cloudflare(imageFile, label === 'small' ? 'w90' : label, (err, data) => {
                           if (!err && data) {
                             const { id, url, imageBody } = data
                             return new Promise(resolve => {
@@ -368,7 +357,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                     // Transofrm image
                     transformImg()
 
-                  }, imageBase64 ? 50 : 300)
+                  }, imageFile ? 50 : 300)
                 } else {
                   setTimeout(() => {
                     // all done
