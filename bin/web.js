@@ -259,11 +259,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           key += `${v4()}-${filename}`
 
           // Aux methods
-          const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${1282}/${key}`
+          const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${req.storeId}/${key}`
           let picture = {}
           const respond = (suc = true) => {
             if (suc) {
-              logger.log(`${1282} ${key} ${bucket} All optimizations done`)
+              logger.log(`${req.storeId} ${key} ${bucket} All optimizations done`)
               res.json({ bucket, key, uri: picture['zoom'] ? picture['zoom'].url : '' , picture })
             } else {
               res.status(500).json({ message: {
@@ -274,7 +274,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           }
 
           // Upload to cloudiflare
-          console.log('[rdy to cloudflare]')
           cloudflare(req.file, (err, data) => {
             
             // No errors by the way
@@ -282,13 +281,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
               // Retrieve converted images
               const { convertedImages } = data
+              let s3attempts = 0
 
               // Map converted images and upload to S3
               convertedImages.forEach(({ id, label, imageBody }) => {
                 
-                console.log ('[upload] here', label)
                 const newKey = `imgs/${label}/${key}`
-                let s3attempts = 0
 
                 // Upload image to s3
                 return new Promise((resolve) => {
@@ -299,7 +297,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   const s3Options = {
                     ...baseS3Options,
                     ContentType: contentType,
-                    Key: `${1282}/${newKey}.${fileFormat}`
+                    Key: `${req.storeId}/${newKey}.${fileFormat}`
                   }
 
                   // Put s3 object
@@ -319,7 +317,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 .then((url) => {
                   s3attempts++
                   if (url && (!picture[label])) {
-                    picture[label] = { url, size: label }
+                    picture[label] = { url: mountUri(url), size: label }
                     // pictureBytes[label] = bytes
                   }
                   if (s3attempts === 4 && Object.keys(picture).length === 4) {
@@ -333,8 +331,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 })
               })
 
-              return respond()
-
+              //return respond()
             }
 
             // Sadness and sorrow
@@ -342,7 +339,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               return respond(false)
             }
           })
-
         }
       })
     })
