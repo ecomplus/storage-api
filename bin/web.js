@@ -268,7 +268,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
           // Map converted images and upload to S3
           convertedImages.forEach(({ label, imageBody }) => {
             
+            console.log ('[upload] here', label)
+          
           })
+
+          return respond()
 
         }
 
