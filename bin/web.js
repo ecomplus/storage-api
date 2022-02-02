@@ -23,6 +23,8 @@ const Express = require('express')
 const multer = require('multer')
 // body parsing middleware
 const bodyParser = require('body-parser')
+// UUID Generator
+const { v4 } = require('uuid')
 
 // Redis to store buckets and Kraken async requests IDs
 const redis = require('redis')
@@ -219,10 +221,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // setup multer for file upload
     const localUpload = multer({
       storage: multer.memoryStorage(),
-      limits: {
-        // maximum 2mb
-        fileSize: 2000000
-      }
+      limits: { fileSize: 2000000 }
     })
 
     const baseS3Options = {
@@ -231,223 +230,121 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     }
 
     app.post(urls.upload, (req, res) => {
-      logger.log(`${storeId} [storage-api] Upload start...`)
+      logger.log(`[storage-api] Upload start...`,)
 
-      // Retrieve request parameters
-      const key = '@v3/'
-      const { storeId } = req
-      const { bucket, host } = spaces[0]
+      // Validate file
+      localUpload.single('file')(req, res, (err) => {
+        if (err) {
+          sendError(res, 400, 3001, err.message, {
+            en_us: 'This file cannot be uploaded, make sure it is a valid image with up to 2mb',
+            pt_br: 'O arquivo não pôde ser carregado, verifique se é uma imagem válida com até 2mb'
+          })
+        } else {
 
-      // Validate if received a file
-      const file = req.file
-      if (!file) {
-        sendError(res, 422, 3001, 'Unprocessable entity', {
-          en_us: 'You must send a file attached to this request',
-          pt_br: 'Você deve enviar um arquivo anexado a essa requisição'
-        })
-      }
+          // Retrieve request parameters
+          let key = '@v3/'
+          const { bucket, host } = spaces[0]
 
-      // Validate if file matchs the recommended size
-      const fileBytes = file.size
-      if (fileBytes > 2048) {
-        sendError(res, 422, 3001, 'Unprocessable entity', {
-          en_us: 'This file cannot be uploaded, make sure it is a valid image with up to 2mb',
-          pt_br: 'O arquivo não pôde ser carregado, verifique se é uma imagem válida com até 2mb'
-        })
-      }
+          // Retrieve local image data
+          let dir = req.query.directory
+          if (typeof dir === 'string' && dir.charAt(0) === '/') {
+            dir = dir.substr(1).replace(/[^\w-/]/g, '').replace('//', '')
+            if (dir.length) {
+              key += dir.toLowerCase() + '/'
+            }
+          }
 
-      // Upload to cloudiflare
-      cloudflare(file, (err, data) => {
-        
-        // No errors by the way
-        if (!err && data) {
+          // Keep filename
+          const filename = req.file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
+          key += `${v4()}-${filename}`
 
-          // Retrieve converted images
-          const { convertedImages } = data
+          // Aux methods
+          const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${1282}/${key}`
+          let picture = {}
+          const respond = (suc = true) => {
+            if (suc) {
+              logger.log(`${1282} ${key} ${bucket} All optimizations done`)
+              res.json({ bucket, key, uri: picture['zoom'] ? picture['zoom'].url : '' , picture })
+            } else {
+              res.status(500).json({ message: {
+                en_us: 'An error ocourred whlie uploading your file.',
+                pt_br: 'Ocorreu um erro ao persistir seu arquivo'
+              }})
+            }
+          }
 
-          // Map converted images and upload to S3
-          convertedImages.forEach(({ label, imageBody }) => {
+          // Upload to cloudiflare
+          console.log('[rdy to cloudflare]')
+          cloudflare(req.file, (err, data) => {
             
-            console.log ('[upload] here', label)
-          
+            // No errors by the way
+            if (!err && data) {
+
+              // Retrieve converted images
+              const { convertedImages } = data
+
+              // Map converted images and upload to S3
+              convertedImages.forEach(({ id, label, imageBody }) => {
+                
+                console.log ('[upload] here', label)
+                const newKey = `imgs/${label}/${key}`
+                let s3attempts = 0
+
+                // Upload image to s3
+                return new Promise((resolve) => {
+
+                  // Define s3 options
+                  const contentType = label === 'zoom' ? 'image/jpeg' : 'image/webp'
+                  const fileFormat = label === 'zoom' ? 'jpg' : 'webp'
+                  const s3Options = {
+                    ...baseS3Options,
+                    ContentType: contentType,
+                    Key: `${1282}/${newKey}.${fileFormat}`
+                  }
+
+                  // Put s3 object
+                  if (imageBody) {
+                    return runMethod('putObject', { ...s3Options, Body: imageBody })
+                      .then(() => resolve(mountUri(newKey)))
+                      .catch((err) => {
+                        logger.error(err)
+                        resolve(key)
+                      })
+                  }
+
+                  // async handle with callback URL
+                  redisClient.setex(genRedisKey(id, true), 600, JSON.stringify(s3Options))
+                  return resolve(mountUri(newKey))
+                })
+                .then((url) => {
+                  s3attempts++
+                  if (url && (!picture[label])) {
+                    picture[label] = { url, size: label }
+                    // pictureBytes[label] = bytes
+                  }
+                  if (s3attempts === 4 && Object.keys(picture).length === 4) {
+                    return respond()
+                  } else if (s3attempts === 4) {
+                    return sendError(res, 500, 3002, 'Internal server error', {
+                      en_us: 'An error ocourred whlie uploading your file.',
+                      pt_br: 'Ocorreu um erro ao persistir seu arquivo'
+                    })
+                  }
+                })
+              })
+
+              return respond()
+
+            }
+
+            // Sadness and sorrow
+            if (err) {
+              return respond(false)
+            }
           })
 
-          return respond()
-
-        }
-
-        // Sadness and sorrow
-        if (
-          err &&
-          typeof err.message === 'string' &&
-          (err.message.indexOf('504 Gateway Timeout') > -1 || err.message.indexOf('503 Service Unavailable') > -1)
-        ) {
-          return respond()
         }
       })
-      
-
-      // localUpload.single('file')(req, res, (err) => {
-      //   if (err) {
-      //     const usrMsg = {
-      //       en_us: 'This file cannot be uploaded, make sure it is a valid image with up to 2mb',
-      //       pt_br: 'O arquivo não pôde ser carregado, verifique se é uma imagem válida com até 2mb'
-      //     }
-      //     sendError(res, 400, 3001, err.message, usrMsg)
-      //   } else {
-      //     let dir = req.query.directory
-      //     if (typeof dir === 'string' && dir.charAt(0) === '/') {
-      //       // remove first char to not duplicate first bar
-      //       // normalize, then remove empty paths
-      //       dir = dir.substr(1).replace(/[^\w-/]/g, '').replace('//', '')
-      //       if (dir.length) {
-      //         key += dir.toLowerCase() + '/'
-      //       }
-      //     }
-      //     // keep filename
-      //     const filename = req.file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
-      //     key += `${Date.now()}-${filename}`
-      //     const { mimetype } = req.file
-
-      //     runMethod('putObject', {
-      //       ...baseS3Options,
-      //       ContentType: mimetype,
-      //       Key: `${storeId}/${key}`,
-      //       Body: req.file.buffer
-      //     })
-      //     // S3 Response
-      //     .then(() => {
-      //       logger.log(`${storeId} ${key} Uploaded to ${bucket}`)
-      //       // zoom uploaded
-      //       const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${storeId}/${key}`
-      //       const uri = mountUri(key)
-      //       const picture = { zoom: { url: uri } }
-      //       const pictureBytes = {}
-      //       // resize/optimize image
-      //       let i = -1
-      //       let transformedImageBody = null
-
-      //       const respond = () => {
-      //         logger.log(`${storeId} ${key} ${bucket} All optimizations done`)
-      //         res.json({ bucket, key, uri, picture })
-      //       }
-
-      //       const callback = err => {
-      //         if (!err) {
-      //           // next image size
-      //           i++
-      //           if (i < pictureOptims.length) {
-      //             let newKey
-      //             const { label, size, webp } = pictureOptims[i]
-      //             newKey = `imgs/${label}/${key}`
-      //             const imageFile = req.file
-
-      //             // free memory
-      //             transformedImageBody = req.file = null
-
-      //             setTimeout(() => {
-                      
-      //               // Transform image updated to cloudflare
-      //               const transformImg = (isRetry = false) => {
-
-      //                   cloudflare(imageFile, label === 'small' ? 'w90' : label, (err, data) => {
-      //                     if (!err && data) {
-      //                       const { id, url, imageBody } = data
-      //                       return new Promise(resolve => {
-      //                         // Cloudinary keeps image as webp, so we using webp as default
-      //                         const contentType = 'image/webp'
-      //                         const fileFormat = 'webp'
-      //                         if (imageBody || id) {
-      //                           const s3Options = {
-      //                             ...baseS3Options,
-      //                             ContentType: contentType,
-      //                             Key: `${storeId}/${newKey}.${fileFormat}`
-      //                           }
-      //                           if (imageBody) {
-      //                             transformedImageBody = imageBody
-      //                             // PUT new image on S3 bucket
-      //                             return runMethod('putObject', { ...s3Options, Body: imageBody })
-      //                               .then(() => resolve(mountUri(newKey)))
-      //                               .catch((err) => {
-      //                                 logger.error(err)
-      //                                 resolve(url)
-      //                               })
-      //                           }
-      //                           // async handle with callback URL
-      //                           redisClient.setex(genRedisKey(id, true), 600, JSON.stringify(s3Options))
-      //                           return resolve(mountUri(newKey))
-      //                         }
-      //                         resolve(url)
-                            
-      //                       }).then(url => {
-      //                         if (url && (!picture[label] || pictureBytes[label] > bytes)) {
-      //                           picture[label] = { url, size }
-      //                           pictureBytes[label] = bytes
-      //                         }
-      //                         callback()
-      //                       })
-      //                     }
-
-      //                     if (
-      //                       err &&
-      //                       typeof err.message === 'string' &&
-      //                       (err.message.indexOf('504 Gateway Timeout') > -1 || err.message.indexOf('503 Service Unavailable') > -1)
-      //                     ) {
-      //                       if (!isRetry) {
-      //                         return setTimeout(() => transformImg(true), 1000)
-      //                       } else {
-      //                         return respond()
-      //                       }
-      //                     }
-      //                     callback(err)
-      //                   })
-
-      //               }
-
-      //               // Transofrm image
-      //               transformImg()
-
-      //             }, imageFile ? 50 : 300)
-      //           } else {
-      //             setTimeout(() => {
-      //               // all done
-      //               respond()
-      //             }, 50)
-      //           }
-
-      //         } else if (uri && typeof err.message === 'string' && err.message.indexOf('cloud_name') > -1) {
-      //           // image uploaded but not transformed
-      //           respond()
-      //           logger.error(err)
-      //         } else {
-      //           // respond with error
-      //           const usrMsg = {
-      //             en_us: 'Error while handling image, the file may be protected or corrupted',
-      //             pt_br: 'Erro ao manipular a imagem, o arquivo pode estar protegido ou corrompido'
-      //           }
-      //           sendError(res, 415, uri, err.message, usrMsg)
-      //         }
-      //       }
-
-      //       switch (mimetype) {
-      //         case 'image/jpeg':
-      //         case 'image/png':
-      //           callback()
-      //           break
-      //         default:
-      //           respond()
-      //       }
-      //     })
-      //     // CDN Upload error
-      //     .catch((err) => {
-      //       const usrMsg = {
-      //         en_us: 'This file cannot be uploaded to CDN',
-      //         pt_br: 'O arquivo não pôde ser carregado para o CDN'
-      //       }
-      //       sendError(res, 400, 3002, err.message, usrMsg)
-      //     })
-      //   }
-      // })
     })
 
     app.use(urls.manipulationCallback, (req, res) => {
@@ -520,6 +417,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     })
 
     app.listen(port, () => {
+      console.log('App is running')
       logger.log('Storage API running with Express on port ' + port)
     })
   }
