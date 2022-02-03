@@ -23,10 +23,10 @@ process.on('uncaughtException', (err) => {
     msg += '\n'
   }
 
-  // let fs = require('fs')
-  // fs.appendFile('/var/log/nodejs/_stderr', msg, () => {
-  //   process.exit(1)
-  // })
+  const fs = require('fs')
+  fs.appendFile('/var/log/nodejs/_stderr', msg, () => {
+    process.exit(1)
+  })
 })
 
 // web application
