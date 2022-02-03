@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.0.0](https://github.com/ecomplus/storage-api/compare/v3.1.8...v4.0.0) (2022-02-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cf-images:** no more support for transformations with cloudinary
+
+fixes https://github.com/ecomplus/storage-api/issues/9
+* **deps:** removing cloudinary support
+
+### Features
+
+* **cf-images:** creating cloudflare images adapter ([#7](https://github.com/ecomplus/storage-api/issues/7)) ([6fe1b0d](https://github.com/ecomplus/storage-api/commit/6fe1b0dee2910e4195503221a037653e158d7d01)), closes [#1](https://github.com/ecomplus/storage-api/issues/1) [#1](https://github.com/ecomplus/storage-api/issues/1) [#3](https://github.com/ecomplus/storage-api/issues/3) [#4](https://github.com/ecomplus/storage-api/issues/4) [#4](https://github.com/ecomplus/storage-api/issues/4) [#5](https://github.com/ecomplus/storage-api/issues/5) [#6](https://github.com/ecomplus/storage-api/issues/6) [#8](https://github.com/ecomplus/storage-api/issues/8)
+* **cf-images:** handle transformation/optiomization with cloudflare images ([a25b8cf](https://github.com/ecomplus/storage-api/commit/a25b8cf9799ce9aa09a351a5f80f3ef8823c1943))
+
+
+### Bug Fixes
+
+* **deps:** remove no more used cloudinary pkg ([9486549](https://github.com/ecomplus/storage-api/commit/9486549472cad3351f2a4305ff8bb157c4b40c65))
+* **deps:** remove uuid and redis ([16a1f0a](https://github.com/ecomplus/storage-api/commit/16a1f0acd696923ad1fe86823fbc1bc4f486efb9))
+* **logger:** revert to production log files ([4ce4259](https://github.com/ecomplus/storage-api/commit/4ce4259238e8b32de8374a8b9306fa0c519a8728))
+
 ### [3.1.8](https://github.com/ecomplus/storage-api/compare/v3.1.7...v3.1.8) (2021-09-16)
 
 
