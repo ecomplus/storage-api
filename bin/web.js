@@ -272,7 +272,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               }
 
               // Upload to cloudiflare Images
-              cloudflare(req.file)
+              cloudflare(req.file, pictureOptims)
                 .then(async ({ transformations }) => {
                   for (let i = 0; i < pictureOptims.length; i++) {
                     const { label, size, webp } = pictureOptims[i]
