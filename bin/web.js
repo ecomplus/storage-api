@@ -258,7 +258,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${storeId}/${key}`
               const uri = mountUri(key)
               const picture = { zoom: { url: uri } }
-              const extra = {}
 
               const respond = () => {
                 logger.log(`${storeId} ${key} ${bucket} ${Object.keys(picture).length} uploads done`)
@@ -267,8 +266,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                   key,
                   // return complete object URL
                   uri,
-                  picture,
-                  extra
+                  picture
                 })
               }
 
