@@ -272,8 +272,44 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 })
               }
 
+              // Upload additional images callback
+              const webpCallback = async transformations => {
+                const addOptins = pictureOptims.filter(opt => !opt.avif)
+                for (let i = 0; i < addOptins.length; i++) {
+                  
+                  // Retrieve transformation
+                  const { label, avif } = addOptins[i]
+                  const transformation = transformations.find(t => {
+                    return (t.label === label && t.avif === avif)
+                  })
+
+                  // Upload it
+                  if (transformation) {
+                    const { imageBody } = transformation
+                    let newKey = `imgs/${label}/${key}`
+                    let contentType
+               
+                    // converted to Webp
+                    newKey += '.webp'
+                    contentType = 'image/webp'
+                    
+                    // PUT new image on S3 buckets
+                    try {
+                      await runMethod('putObject', {
+                        ...baseS3Options,
+                        ContentType: contentType,
+                        Key: `${storeId}/${newKey}`,
+                        Body: imageBody
+                      })               
+                    } catch (err) {
+                      logger.error(err)
+                    }
+                  }
+                }
+              }
+
               // Upload to cloudiflare Images
-              cloudflare(req.file, pictureOptims)
+              cloudflare(req.file, pictureOptims, webpCallback)
                 .then(async ({ transformations }) => {
                   for (let i = 0; i < pictureOptims.length; i++) {
                     const { label, size, avif } = pictureOptims[i]
