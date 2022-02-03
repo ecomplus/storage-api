@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [4.0.1](https://github.com/ecomplus/storage-api/compare/v4.0.0...v4.0.1) (2022-02-03)
+
+
+### Bug Fixes
+
+* **upload:** must pass `pictureOptims` to CF images upload ([e6cacac](https://github.com/ecomplus/storage-api/commit/e6cacacd5ae7aa617f80c4862bb545a389d32d5a))
+
 ## [4.0.0](https://github.com/ecomplus/storage-api/compare/v3.1.8...v4.0.0) (2022-02-03)
 
 
