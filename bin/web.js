@@ -40,7 +40,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     const pictureOptims = (pictureSizes || [700, 350]).reduce((optims, size, i) => {
       const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
-      optims.push({ size, label, webp: true })
+      optims.push({ size, label, avif: false })
+      optims.push({ size, label, avif: true })
       return optims
     }, [])
 
@@ -256,9 +257,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               // zoom uploaded
               const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${storeId}/${key}`
               const uri = mountUri(key)
-              const picture = {
-                zoom: { url: uri }
-              }
+              const picture = { zoom: { url: uri } }
 
               const respond = () => {
                 logger.log(`${storeId} ${key} ${bucket} ${Object.keys(picture).length} uploads done`)
@@ -271,25 +270,67 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 })
               }
 
+              // Upload additional images callback
+              const webpCallback = async transformations => {
+                const addOptins = pictureOptims.filter(opt => !opt.avif)
+                for (let i = 0; i < addOptins.length; i++) {
+                  
+                  // Retrieve transformation
+                  const { label, avif } = addOptins[i]
+                  const transformation = transformations.find(t => {
+                    return (t.label === label && t.avif === avif)
+                  })
+
+                  // Upload it
+                  if (transformation) {
+                    const { imageBody } = transformation
+                    let newKey = `imgs/${label}/${key}`
+                    let contentType
+               
+                    // converted to Webp
+                    newKey += '.webp'
+                    contentType = 'image/webp'
+                    
+                    // PUT new image on S3 buckets
+                    try {
+                      await runMethod('putObject', {
+                        ...baseS3Options,
+                        ContentType: contentType,
+                        Key: `${storeId}/${newKey}`,
+                        Body: imageBody
+                      })               
+                    } catch (err) {
+                      logger.error(err)
+                    }
+                  }
+                }
+              }
+
               // Upload to cloudiflare Images
-              cloudflare(req.file, pictureOptims)
+              cloudflare(req.file, pictureOptims, webpCallback)
                 .then(async ({ transformations }) => {
                   for (let i = 0; i < pictureOptims.length; i++) {
-                    const { label, size, webp } = pictureOptims[i]
+                    const { label, size, avif } = pictureOptims[i]
                     const transformation = transformations.find(transformation => {
-                      return transformation.label === label && transformation.webp === webp
+                      return (
+                        transformation.label === label &&
+                        transformation.avif === avif
+                      )
                     })
 
+                    // Normal webp transformations
                     if (transformation) {
                       const { imageBody } = transformation
                       let newKey = `imgs/${label}/${key}`
                       let contentType
-                      if (webp) {
-                        // converted to WebP
+                      if (avif) {
+                        // converted to Avif
+                        newKey += '.avif'
+                        contentType = 'image/avif'
+                      } else {
+                        // converted to Webp
                         newKey += '.webp'
                         contentType = 'image/webp'
-                      } else {
-                        contentType = mimetype
                       }
 
                       // PUT new image on S3 buckets
@@ -301,9 +342,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                           Body: imageBody
                         })
                         // add to response pictures
-                        picture[label] = {
-                          url: mountUri(newKey),
-                          size
+                        if (!picture[label]) {
+                          picture[label] = {
+                            url: mountUri(newKey),
+                            size
+                          }
                         }
                       } catch (err) {
                         logger.error(err)
