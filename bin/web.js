@@ -40,8 +40,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
     const pictureOptims = (pictureSizes || [700, 350]).reduce((optims, size, i) => {
       const label = i === 0 ? 'big' : i === 1 ? 'normal' : 'small'
-      optims.push({ size, label, webp: true, avif: false })
-      optims.push({ size, label, webp: false, avif: true })
+      optims.push({ size, label, avif: false })
+      optims.push({ size, label, avif: true })
       return optims
     }, [])
 
@@ -276,14 +276,8 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
               cloudflare(req.file, pictureOptims)
                 .then(async ({ transformations }) => {
                   for (let i = 0; i < pictureOptims.length; i++) {
-                    const { label, size, webp, avif } = pictureOptims[i]
+                    const { label, size, avif } = pictureOptims[i]
                     const transformation = transformations.find(transformation => {
-                      return (
-                        transformation.label === label &&
-                        transformation.webp === webp
-                      )
-                    })
-                    const extraTransformation = transformations.find(transformation => {
                       return (
                         transformation.label === label &&
                         transformation.avif === avif
@@ -295,43 +289,14 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                       const { imageBody } = transformation
                       let newKey = `imgs/${label}/${key}`
                       let contentType
-                      if (webp) {
-                        // converted to WebP
-                        newKey += '.webp'
-                        contentType = 'image/webp'
-                      } else {
-                        contentType = mimetype
-                      }
-
-                      // PUT new image on S3 buckets
-                      try {
-                        await runMethod('putObject', {
-                          ...baseS3Options,
-                          ContentType: contentType,
-                          Key: `${storeId}/${newKey}`,
-                          Body: imageBody
-                        })
-                        // add to response pictures
-                        picture[label] = {
-                          url: mountUri(newKey),
-                          size
-                        }
-                      } catch (err) {
-                        logger.error(err)
-                      }
-                    }
-
-                    // If AVIF Transformations
-                    if (extraTransformation) {
-                      const { imageBody } = extraTransformation
-                      let newKey = `imgs/${label}/${key}`
-                      let contentType
                       if (avif) {
-                        // converted to WebP
+                        // converted to Avif
                         newKey += '.avif'
                         contentType = 'image/avif'
                       } else {
-                        contentType = mimetype
+                        // converted to Webp
+                        newKey += '.webp'
+                        contentType = 'image/webp'
                       }
 
                       // PUT new image on S3 buckets
@@ -343,7 +308,12 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                           Body: imageBody
                         })
                         // add to response pictures
-                        extra[label] = { url: mountUri(newKey), size }
+                        if (!picture[label]) {
+                          picture[label] = {
+                            url: mountUri(newKey),
+                            size
+                          }
+                        }
                       } catch (err) {
                         logger.error(err)
                       }
