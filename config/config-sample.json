@@ -11,11 +11,6 @@
       "fra1"
     ]
   },
-  "cloudinaryAuth": {
-    "cloudName": "ecomplus",
-    "apiKey": "abcdefgh",
-    "apiSecret": "1234567890"
-  },
   "cloudflareAuth": {
     "apiKey": "your_key",
     "accountId": "your_account"

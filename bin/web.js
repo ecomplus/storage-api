@@ -8,8 +8,6 @@ const auth = require('./../lib/Auth')
 const Aws = require('./../lib/Aws')
 // Cloudflare API abstraxtion
 const CloudFlare = require('./../lib/Cloudflare')
-// download image from Kraken temporary CDN
-const download = require('./../lib/Download')
 
 // NodeJS filesystem module
 const fs = require('fs')
@@ -23,11 +21,6 @@ const Express = require('express')
 const multer = require('multer')
 // body parsing middleware
 const bodyParser = require('body-parser')
-// UUID Generator
-const { v4 } = require('uuid')
-
-// Redis to store buckets and Kraken async requests IDs
-const redis = require('redis')
 
 // read config file
 fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) => {
@@ -134,11 +127,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     // parse JSON request body
     app.use(bodyParser.json())
 
-    // new database client
-    const redisClient = redis.createClient()
-    // Redis key pattern
-    const genRedisKey = (key, tmp = false) => `stg${(tmp ? ':tmp' : '')}:${key}`
-
     const middlewares = [
       (req, res, next) => {
         // check store ID
@@ -189,8 +177,7 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     const apiPath = '/:store' + baseUri
     const urls = {
       upload: apiPath + 'upload.json',
-      s3: apiPath + 's3/:method.json',
-      manipulationCallback: '/manipulation/callback.json'
+      s3: apiPath + 's3/:method.json'
     }
     // API middlewares
     app.use(apiPath, ...middlewares)
@@ -230,7 +217,11 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
     }
 
     app.post(urls.upload, (req, res) => {
-      logger.log(`[storage-api] Upload start...`,)
+      const { storeId } = req
+      const { bucket, host } = spaces[0]
+      logger.log(`${storeId} Uploading...`)
+      // unique object key
+      let key = '@v3/'
 
       // Validate file
       localUpload.single('file')(req, res, (err) => {
@@ -240,11 +231,6 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
             pt_br: 'O arquivo não pôde ser carregado, verifique se é uma imagem válida com até 2mb'
           })
         } else {
-
-          // Retrieve request parameters
-          let key = '@v3/'
-          const { bucket, host } = spaces[0]
-
           // Retrieve local image data
           let dir = req.query.directory
           if (typeof dir === 'string' && dir.charAt(0) === '/') {
@@ -256,119 +242,97 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
 
           // Keep filename
           const filename = req.file.originalname.replace(/[^\w-.]/g, '').toLowerCase()
-          key += `${v4()}-${filename}`
+          key += `${Date.now()}-${filename}`
+          const { mimetype } = req.file
 
-          // Aux methods
-          const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${req.storeId}/${key}`
-          let picture = {}
-          const respond = (suc = true) => {
-            if (suc) {
-              logger.log(`${req.storeId} ${key} ${bucket} All optimizations done`)
-              res.json({ bucket, key, uri: picture['zoom'] ? picture['zoom'].url : '' , picture })
-            } else {
-              res.status(500).json({ message: {
-                en_us: 'An error ocourred whlie uploading your file.',
-                pt_br: 'Ocorreu um erro ao persistir seu arquivo'
-              }})
-            }
-          }
-
-          // Upload to cloudiflare
-          cloudflare(req.file, (err, data) => {
-            
-            // No errors by the way
-            if (!err && data) {
-
-              // Retrieve converted images
-              const { convertedImages } = data
-              let s3attempts = 0
-
-              // Map converted images and upload to S3
-              convertedImages.forEach(({ id, label, imageBody }) => {
-                
-                const newKey = `imgs/${label}/${key}`
-
-                // Upload image to s3
-                return new Promise((resolve) => {
-
-                  // Define s3 options
-                  const contentType = label === 'zoom' ? 'image/jpeg' : 'image/webp'
-                  const fileFormat = label === 'zoom' ? 'jpg' : 'webp'
-                  const s3Options = {
-                    ...baseS3Options,
-                    ContentType: contentType,
-                    Key: `${req.storeId}/${newKey}.${fileFormat}`
-                  }
-
-                  // Put s3 object
-                  if (imageBody) {
-                    return runMethod('putObject', { ...s3Options, Body: imageBody })
-                      .then(() => resolve(mountUri(newKey)))
-                      .catch((err) => {
-                        logger.error(err)
-                        resolve(key)
-                      })
-                  }
-
-                  // async handle with callback URL
-                  redisClient.setex(genRedisKey(id, true), 600, JSON.stringify(s3Options))
-                  return resolve(mountUri(newKey))
-                })
-                .then((url) => {
-                  s3attempts++
-                  if (url && (!picture[label])) {
-                    picture[label] = { url: mountUri(url), size: label }
-                    // pictureBytes[label] = bytes
-                  }
-                  if (s3attempts === 4 && Object.keys(picture).length === 4) {
-                    return respond()
-                  } else if (s3attempts === 4) {
-                    return sendError(res, 500, 3002, 'Internal server error', {
-                      en_us: 'An error ocourred whlie uploading your file.',
-                      pt_br: 'Ocorreu um erro ao persistir seu arquivo'
-                    })
-                  }
-                })
-              })
-
-              //return respond()
-            }
-
-            // Sadness and sorrow
-            if (err) {
-              return respond(false)
-            }
+          runMethod('putObject', {
+            ...baseS3Options,
+            ContentType: mimetype,
+            Key: `${storeId}/${key}`,
+            Body: req.file.buffer
           })
+            .then(() => {
+              logger.log(`${storeId} ${key} Uploaded to ${bucket}`)
+              // zoom uploaded
+              const mountUri = (key, baseUrl = cdnHost || host) => `https://${baseUrl}/${storeId}/${key}`
+              const uri = mountUri(key)
+              const picture = {
+                zoom: { url: uri }
+              }
+
+              const respond = () => {
+                logger.log(`${storeId} ${key} ${bucket} ${Object.keys(picture).length} uploads done`)
+                res.json({
+                  bucket,
+                  key,
+                  // return complete object URL
+                  uri,
+                  picture
+                })
+              }
+
+              // Upload to cloudiflare Images
+              cloudflare(req.file)
+                .then(async ({ transformations }) => {
+                  for (let i = 0; i < pictureOptims.length; i++) {
+                    const { label, size, webp } = pictureOptims[i]
+                    const transformation = transformations.find(transformation => {
+                      return transformation.label === label && transformation.webp === webp
+                    })
+
+                    if (transformation) {
+                      const { imageBody } = transformation
+                      let newKey = `imgs/${label}/${key}`
+                      let contentType
+                      if (webp) {
+                        // converted to WebP
+                        newKey += '.webp'
+                        contentType = 'image/webp'
+                      } else {
+                        contentType = mimetype
+                      }
+
+                      // PUT new image on S3 buckets
+                      try {
+                        await runMethod('putObject', {
+                          ...baseS3Options,
+                          ContentType: contentType,
+                          Key: `${storeId}/${newKey}`,
+                          Body: imageBody
+                        })
+                        // add to response pictures
+                        picture[label] = {
+                          url: mountUri(newKey),
+                          size
+                        }
+                      } catch (err) {
+                        logger.error(err)
+                      }
+                    }
+                  }
+
+                  return setTimeout(() => {
+                    // all done
+                    respond()
+                  }, 50)
+                })
+
+                .catch(err => {
+                  logger.error(err)
+                  // return image without all transformations
+                  return respond()
+                })
+            })
+
+            .catch(err => {
+              const usrMsg = {
+                en_us: 'This file cannot be uploaded to CDN',
+                pt_br: 'O arquivo não pôde ser carregado para o CDN'
+              }
+              sendError(res, 400, 3002, err.message, usrMsg)
+            })
         }
       })
-    })
-
-    app.use(urls.manipulationCallback, (req, res) => {
-      if (req.body) {
-        const { url, id } = req.body
-        if (url) {
-          download(url, (err, imageBody) => {
-            if (!err) {
-              // get s3 options set on redis by manipulation request id
-              const redisKey = genRedisKey(id, true)
-              redisClient.get(redisKey, (err, val) => {
-                if (!err) {
-                  // PUT new image on S3 bucket
-                  runMethod('putObject', { ...JSON.parse(val), Body: imageBody })
-                    .then(() => redisClient.del(redisKey))
-                    .catch(logger.error)
-                } else {
-                  logger.error(err)
-                }
-              })
-            }
-          })
-        } else {
-          // TODO: treat possible errors here
-          logger.log(req.body)
-        }
-      }
-      res.send({})
     })
 
     app.post(urls.s3, (req, res) => {
