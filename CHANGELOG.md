@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.1.0](https://github.com/ecomplus/storage-api/compare/v4.0.1...v4.1.0) (2022-02-05)
+
+
+### Features
+
+* **avif:** upload avif and webp (fallback) versions ([#11](https://github.com/ecomplus/storage-api/issues/11)) ([72cd885](https://github.com/ecomplus/storage-api/commit/72cd885c5df88bce04c224ec6bb7f9f5376e687d))
+
 ### [4.0.1](https://github.com/ecomplus/storage-api/compare/v4.0.0...v4.0.1) (2022-02-03)
 
 
