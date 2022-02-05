@@ -270,27 +270,22 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 })
               }
 
-              // Upload additional images callback
-              const webpCallback = async transformations => {
-                const addOptins = pictureOptims.filter(opt => !opt.avif)
-                for (let i = 0; i < addOptins.length; i++) {
-                  
-                  // Retrieve transformation
-                  const { label, avif } = addOptins[i]
-                  const transformation = transformations.find(t => {
-                    return (t.label === label && t.avif === avif)
+              const uplaodPictureOptims = async transformations => {
+                for (let i = 0; i < pictureOptims.length; i++) {
+                  const { label, size, avif } = pictureOptims[i]
+                  const transformation = transformations.find(transformation => {
+                    return (
+                      transformation &&
+                      transformation.label === label &&
+                      transformation.avif === avif
+                    )
                   })
 
-                  // Upload it
                   if (transformation) {
                     const { imageBody } = transformation
-                    let newKey = `imgs/${label}/${key}`
-                    let contentType
-               
-                    // converted to Webp
-                    newKey += '.webp'
-                    contentType = 'image/webp'
-                    
+                    const extension = avif ? 'avif' : 'webp'
+                    const newKey = `imgs/${label}/${key}.${extension}`
+                    const contentType = `image/${extension}`
                     // PUT new image on S3 buckets
                     try {
                       await runMethod('putObject', {
@@ -298,7 +293,13 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                         ContentType: contentType,
                         Key: `${storeId}/${newKey}`,
                         Body: imageBody
-                      })               
+                      })
+                      if (avif || !picture[label]) {
+                        picture[label] = {
+                          url: mountUri(newKey),
+                          size
+                        }
+                      }
                     } catch (err) {
                       logger.error(err)
                     }
@@ -306,60 +307,21 @@ fs.readFile(path.join(__dirname, '../config/config.json'), 'utf8', (err, data) =
                 }
               }
 
-              // Upload to cloudiflare Images
+              // Upload fallback WebP images
+              const webpCallback = async ({ transformations }) => {
+                uplaodPictureOptims(transformations)
+              }
+
+              // Upload to Cloudflare Images
               cloudflare(req.file, pictureOptims, webpCallback)
                 .then(async ({ transformations }) => {
-                  for (let i = 0; i < pictureOptims.length; i++) {
-                    const { label, size, avif } = pictureOptims[i]
-                    const transformation = transformations.find(transformation => {
-                      return (
-                        transformation.label === label &&
-                        transformation.avif === avif
-                      )
-                    })
-
-                    // Normal webp transformations
-                    if (transformation) {
-                      const { imageBody } = transformation
-                      let newKey = `imgs/${label}/${key}`
-                      let contentType
-                      if (avif) {
-                        // converted to Avif
-                        newKey += '.avif'
-                        contentType = 'image/avif'
-                      } else {
-                        // converted to Webp
-                        newKey += '.webp'
-                        contentType = 'image/webp'
-                      }
-
-                      // PUT new image on S3 buckets
-                      try {
-                        await runMethod('putObject', {
-                          ...baseS3Options,
-                          ContentType: contentType,
-                          Key: `${storeId}/${newKey}`,
-                          Body: imageBody
-                        })
-                        // add to response pictures
-                        if (!picture[label]) {
-                          picture[label] = {
-                            url: mountUri(newKey),
-                            size
-                          }
-                        }
-                      } catch (err) {
-                        logger.error(err)
-                      }
-                    }
-                  }
-
+                  // Await upload transformed Avif image variants to S3
+                  await uplaodPictureOptims(transformations)
                   return setTimeout(() => {
                     // all done
                     respond()
                   }, 50)
                 })
-
                 .catch(err => {
                   logger.error(err)
                   // return image without all transformations
