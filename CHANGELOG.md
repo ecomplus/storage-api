@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [4.1.2](https://github.com/ecomplus/storage-api/compare/v4.1.1...v4.1.2) (2022-02-15)
+
+
+### Bug Fixes
+
+* **s3-method:** prevent consecutive "same time" requests ([fa73fe7](https://github.com/ecomplus/storage-api/commit/fa73fe7dc4c31b7f9ba0ab889644d962692f69a0))
+
 ### [4.1.1](https://github.com/ecomplus/storage-api/compare/v4.1.0...v4.1.1) (2022-02-15)
 
 
