@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [4.1.3](https://github.com/ecomplus/storage-api/compare/v4.1.2...v4.1.3) (2022-02-15)
+
+
+### Bug Fixes
+
+* **s3-method:** better handling and reseting big delay after 503 error response ([8fc7fd1](https://github.com/ecomplus/storage-api/commit/8fc7fd1a7b1717034fb03cafea454b416b6c8604))
+
 ### [4.1.2](https://github.com/ecomplus/storage-api/compare/v4.1.1...v4.1.2) (2022-02-15)
 
 
